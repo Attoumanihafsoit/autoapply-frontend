@@ -1,290 +1,353 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Download, Send, FileText, ArrowLeft, Check, AlertCircle } from 'lucide-react';
+import { Download, FileText, ArrowLeft, CheckCircle2, ShieldCheck, UserCheck, FileCheck2, Loader2, RefreshCw, Smartphone, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Header from '@/components/Header';
-import DocumentCard from '@/components/DocumentCard';
-import CompletionScore from '@/components/CompletionScore';
-import type { OnboardingData, DocumentInfo } from '@/types/onboarding';
+import { simulationService, SimulationResult } from '@/services/simulationService';
+import type { OnboardingData } from '@/types/onboarding';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'autoapply_onboarding';
-
-const generateDocuments = (data: OnboardingData): DocumentInfo[] => {
-  const hasIdentity = data.identity.firstName && data.identity.lastName;
-  const hasAddress = !!data.identity.address;
-  const hasBanking = !!data.banking.branch;
-  const hasWave = data.products.waveWallet && data.products.waveDetails?.idNumber;
-
-  return [
-    {
-      id: 'comptes-particuliers',
-      name: 'Individual Accounts Form',
-      nameFr: 'COMPTES PARTICULIERS',
-      completionScore: hasIdentity && hasAddress && hasBanking ? 98 : 65,
-      mappedFields: [
-        { source: 'Prénom', target: 'Champ 1', value: data.identity.firstName },
-        { source: 'Nom', target: 'Champ 2', value: data.identity.lastName },
-        { source: 'Date de naissance', target: 'Champ 3', value: data.identity.dateOfBirth },
-        { source: 'Adresse', target: 'Champ 4', value: data.identity.address },
-        { source: 'Agence', target: 'Champ 5', value: data.banking.branch },
-      ],
-      missingFields: hasIdentity && hasAddress && hasBanking ? [] : ['Agence'],
-      status: hasIdentity && hasAddress && hasBanking ? 'complete' : 'partial',
-    },
-    {
-      id: 'fatca',
-      name: 'FATCA Form',
-      nameFr: 'FORMULAIRE FATCA',
-      completionScore: data.regulatory.sourceOfFunds ? 100 : 50,
-      mappedFields: [
-        { source: 'US Person', target: 'Case 1', value: data.regulatory.isUsPerson ? 'Oui' : 'Non' },
-        { source: 'Source des fonds', target: 'Champ 2', value: data.regulatory.sourceOfFunds },
-      ],
-      missingFields: data.regulatory.sourceOfFunds ? [] : ['Source des fonds'],
-      status: data.regulatory.sourceOfFunds ? 'complete' : 'partial',
-    },
-    {
-      id: 'cartes',
-      name: 'Card Subscription Contract',
-      nameFr: 'CONTRAT DE SOUSCRIPTION CARTES',
-      completionScore: data.products.bankCard && hasIdentity ? 95 : data.products.bankCard ? 70 : 0,
-      mappedFields: data.products.bankCard ? [
-        { source: 'Nom complet', target: 'Champ Titulaire', value: `${data.identity.firstName} ${data.identity.lastName}` },
-        { source: 'Numéro de compte', target: 'Champ Compte', value: data.banking.accountNumber },
-      ] : [],
-      missingFields: data.products.bankCard ? [] : ['Souscription non sélectionnée'],
-      status: data.products.bankCard && hasIdentity ? 'complete' : data.products.bankCard ? 'partial' : 'missing',
-    },
-    {
-      id: 'bic',
-      name: 'BIC Form - Individual',
-      nameFr: 'FORMULAIRE BIC PERSONNE PHYSIQUE',
-      completionScore: hasIdentity && data.regulatory.occupation ? 92 : 45,
-      mappedFields: [
-        { source: 'Identité', target: 'Section 1', value: `${data.identity.firstName} ${data.identity.lastName}` },
-        { source: 'Profession', target: 'Section 2', value: data.regulatory.occupation },
-        { source: 'Nationalité', target: 'Section 3', value: data.identity.nationality },
-      ],
-      missingFields: hasIdentity && data.regulatory.occupation ? [] : ['Profession'],
-      status: hasIdentity && data.regulatory.occupation ? 'complete' : 'partial',
-    },
-    {
-      id: 'wave',
-      name: 'Wave Client Contract (B2W WAVE)',
-      nameFr: 'CONTRAT WAVE CLIENT (B2W WAVE)',
-      completionScore: hasWave ? 96 : data.products.waveWallet ? 40 : 0,
-      mappedFields: data.products.waveWallet ? [
-        { source: 'Nom complet', target: 'Champ Nom', value: `${data.identity.firstName} ${data.identity.lastName}` },
-        { source: 'Date de naissance', target: 'Champ DOB', value: data.identity.dateOfBirth },
-        { source: 'Lieu de naissance', target: 'Champ POB', value: data.identity.placeOfBirth },
-        { source: 'Numéro de compte', target: 'Champ Compte', value: data.banking.accountNumber },
-        { source: 'Téléphone', target: 'Champ Tel', value: data.identity.phone },
-        { source: 'Code d\'activation', target: 'Champ Code', value: data.banking.activationCode },
-        { source: 'Type pièce', target: 'Champ ID Type', value: data.products.waveDetails?.idType || '' },
-        { source: 'Pays pièce', target: 'Champ ID Pays', value: data.products.waveDetails?.idCountry || '' },
-        { source: 'Numéro pièce', target: 'Champ ID Num', value: data.products.waveDetails?.idNumber || '' },
-        { source: 'Adresse', target: 'Champ Adresse', value: data.identity.address },
-      ] : [],
-      missingFields: hasWave ? [] : data.products.waveWallet ? ['Numéro de pièce d\'identité'] : ['Service non sélectionné'],
-      status: hasWave ? 'complete' : data.products.waveWallet ? 'partial' : 'missing',
-    },
-    {
-      id: 'eer',
-      name: 'EER Public Form',
-      nameFr: 'formulaire public EER',
-      completionScore: hasIdentity ? 88 : 30,
-      mappedFields: [
-        { source: 'Identité complète', target: 'Section A', value: `${data.identity.firstName} ${data.identity.lastName}` },
-        { source: 'Contact', target: 'Section B', value: data.identity.phone },
-      ],
-      missingFields: hasIdentity ? ['Signature secondaire'] : ['Identité', 'Contact'],
-      status: hasIdentity ? 'partial' : 'missing',
-    },
-  ];
-};
 
 const DocumentPreview = () => {
   const { id } = useParams();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
-  const [selectedDoc, setSelectedDoc] = useState<string>('comptes-particuliers');
-  const [documents, setDocuments] = useState<DocumentInfo[]>([]);
+  const [selectedDocId, setSelectedDocId] = useState<string>('doc_1');
   const [data, setData] = useState<OnboardingData | null>(null);
+  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Try to load from applications list first, then fallback to current onboarding
     const applications = JSON.parse(localStorage.getItem('autoapply_applications') || '[]');
     const app = applications.find((a: OnboardingData) => a.id === id);
-    
-    if (app) {
-      setData(app);
-      setDocuments(generateDocuments(app));
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const loadedData = app || (saved ? JSON.parse(saved) : null);
+
+    if (loadedData) {
+      setData(loadedData);
+      // Artificial delay for "Verification" effect
+      setTimeout(() => {
+        simulationService.runChecks(loadedData).then(result => {
+          setSimulationResult(result);
+          if (result.generatedDocuments.length > 0) {
+            setSelectedDocId(result.generatedDocuments[0].id);
+          }
+          setLoading(false);
+        });
+      }, 1200);
     } else {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setData(parsed);
-        setDocuments(generateDocuments(parsed));
-      }
+      setLoading(false);
     }
   }, [id]);
 
-  const selectedDocument = documents.find((d) => d.id === selectedDoc);
+  const selectedDocument = simulationResult?.generatedDocuments.find((d) => d.id === selectedDocId);
 
   const handleDownload = (type: 'zip' | 'pdf') => {
-    toast.success(
-      language === 'fr'
-        ? `Téléchargement ${type === 'zip' ? 'du pack complet' : 'des PDFs'} (Démo)`
-        : `Downloading ${type === 'zip' ? 'complete pack' : 'PDFs'} (Demo)`
+    toast.promise(
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+      {
+        loading: 'Préparation du téléchargement...',
+        success: 'Téléchargement démarré',
+        error: 'Erreur de téléchargement',
+      }
     );
   };
 
-  const handleSendToBank = () => {
-    toast.success(
-      language === 'fr'
-        ? 'Dossier envoyé à la banque pour approbation (Démo)'
-        : 'Application sent to bank for approval (Demo)'
-    );
-  };
-
-  if (!data) {
+  if (loading || !data || !simulationResult) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <Header />
-        <div className="container py-16 text-center">
-          <p className="text-muted-foreground">Chargement...</p>
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse-slow"></div>
+            <Loader2 className="h-16 w-16 text-primary animate-spin relative z-10" />
+          </div>
+          <h2 className="mt-8 text-2xl font-bold tracking-tight">Vérification Finale</h2>
+          <p className="text-muted-foreground mt-2 text-center max-w-sm">
+            Analyse biométrique et contrôles AML en cours...
+          </p>
+          <div className="flex flex-col gap-2 mt-8 w-64">
+            <div className="flex items-center gap-3 text-sm text-foreground/80 animate-slide-in-right" style={{ animationDelay: '0.2s' }}>
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+              Validation d'identité
+            </div>
+            <div className="flex items-center gap-3 text-sm text-foreground/80 animate-slide-in-right" style={{ animationDelay: '0.6s' }}>
+              <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+              Vérification Sanctions (AML)
+            </div>
+            <div className="flex items-center gap-3 text-sm text-foreground/80 animate-slide-in-right" style={{ animationDelay: '1s' }}>
+              <div className="h-2 w-2 rounded-full bg-purple-500 animate-pulse"></div>
+              Génération du pack bancaire
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col font-sans">
       <Header />
 
-      <main className="container py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-5 w-5" />
+      <main className="flex-1 container py-8 max-w-7xl mx-auto">
+        <div className="mb-8 animate-fade-in">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="mb-4 -ml-2 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour à l'accueil
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{t('documents.title')}</h1>
-            <p className="text-muted-foreground">
-              {data.identity.firstName} {data.identity.lastName}
-            </p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Dossier Validé
+              </h1>
+              <p className="text-muted-foreground mt-1 text-lg">
+                Félicitations {data.identity.firstName}, votre dossier est conforme.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" className="gap-2 shadow-sm" onClick={() => handleDownload('zip')}>
+                <FileText className="h-4 w-4" />
+                Télécharger tout (ZIP)
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Document List */}
-          <aside className="lg:w-80 shrink-0 space-y-4">
-            {documents.map((doc) => (
-              <DocumentCard
-                key={doc.id}
-                document={doc}
-                isSelected={selectedDoc === doc.id}
-                onClick={() => setSelectedDoc(doc.id)}
-              />
-            ))}
+        {/* Status Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 animate-slide-up">
 
-            {/* Export Actions */}
-            <div className="pt-4 space-y-3">
-              <Button className="w-full gap-2" onClick={() => handleDownload('zip')}>
-                <Download className="h-4 w-4" />
-                {t('documents.export.zip')}
-              </Button>
-              <Button variant="outline" className="w-full gap-2" onClick={() => handleDownload('pdf')}>
-                <FileText className="h-4 w-4" />
-                {t('documents.export.pdf')}
-              </Button>
-              <Button variant="secondary" className="w-full gap-2" onClick={handleSendToBank}>
-                <Send className="h-4 w-4" />
-                {t('documents.export.send')}
-              </Button>
+          {/* Identity Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-background border border-green-200 dark:border-green-900 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <UserCheck className="h-24 w-24 text-green-600" />
             </div>
-          </aside>
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="h-12 w-12 rounded-full bg-green-100 text-green-700 flex items-center justify-center shadow-inner">
+                <UserCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-green-800 dark:text-green-400">Identité</p>
+                <h3 className="text-lg font-bold text-green-900 dark:text-green-100 flex items-center gap-2">
+                  Vérifiée
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                </h3>
+              </div>
+            </div>
+            <div className="mt-4 text-xs font-semibold text-green-800 bg-white/60 dark:bg-green-900/40 backdrop-blur-sm border border-green-200/50 inline-flex items-center px-3 py-1 rounded-full shadow-sm">
+              <RefreshCw className="h-3 w-3 mr-1.5 animate-spin-slow opacity-70" />
+              Correspondance Faciale: 98%
+            </div>
+          </div>
 
-          {/* Preview Panel */}
-          <div className="flex-1">
-            {selectedDocument && (
-              <div className="bg-card rounded-xl border overflow-hidden">
-                {/* Document Header */}
-                <div className="p-6 border-b bg-muted/30">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-xl font-semibold">
-                        {language === 'fr' ? selectedDocument.nameFr : selectedDocument.name}
-                      </h2>
-                      <div className="mt-2 flex items-center gap-2">
-                        {selectedDocument.status === 'complete' ? (
-                          <span className="badge-success">
-                            <Check className="h-3 w-3" />
-                            {t('documents.status.complete')}
-                          </span>
-                        ) : (
-                          <span className="badge-warning">
-                            <AlertCircle className="h-3 w-3" />
-                            {t('documents.status.partial')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="w-32">
-                      <CompletionScore score={selectedDocument.completionScore} />
-                    </div>
-                  </div>
-                </div>
+          {/* AML Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background border border-blue-200 dark:border-blue-900 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <ShieldCheck className="h-24 w-24 text-blue-600" />
+            </div>
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="h-12 w-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center shadow-inner">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-400">Conformité (AML)</p>
+                <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                  Approuvée
+                  <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                </h3>
+              </div>
+            </div>
+            <div className="mt-4 text-xs font-semibold text-blue-800 bg-white/60 dark:bg-blue-900/40 backdrop-blur-sm border border-blue-200/50 inline-flex items-center px-3 py-1 rounded-full shadow-sm">
+              <ShieldCheck className="h-3 w-3 mr-1.5 opacity-70" />
+              Risque: Faible (Low)
+            </div>
+          </div>
 
-                {/* Mapped Fields */}
-                <div className="p-6">
-                  <h3 className="font-medium mb-4">{t('documents.mappedFields')}</h3>
-                  <div className="space-y-2">
-                    {selectedDocument.mappedFields.map((field, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-muted-foreground">{field.source}</span>
-                          <span className="text-xs text-muted-foreground">→</span>
-                          <span className="text-sm font-medium">{field.target}</span>
-                        </div>
-                        <span className="text-sm font-mono bg-background px-2 py-1 rounded">
-                          {field.value || '—'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+          {/* Documents Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background border border-purple-200 dark:border-purple-900 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <FileCheck2 className="h-24 w-24 text-purple-600" />
+            </div>
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="h-12 w-12 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shadow-inner">
+                <FileCheck2 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-purple-800 dark:text-purple-400">Dossier</p>
+                <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+                  Complet
+                  <CheckCircle2 className="h-5 w-5 text-purple-600" />
+                </h3>
+              </div>
+            </div>
+            <div className="mt-4 text-xs font-semibold text-purple-800 bg-white/60 dark:bg-purple-900/40 backdrop-blur-sm border border-purple-200/50 inline-flex items-center px-3 py-1 rounded-full shadow-sm">
+              <FileText className="h-3 w-3 mr-1.5 opacity-70" />
+              {simulationResult.generatedDocuments.length} documents générés
+            </div>
+          </div>
+        </div>
 
-                  {/* Missing Fields */}
-                  {selectedDocument.missingFields.length > 0 && (
-                    <div className="mt-6">
-                      <h3 className="font-medium mb-4 text-destructive">{t('documents.missingFields')}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedDocument.missingFields.map((field, i) => (
-                          <span key={i} className="badge-error">
-                            {field}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+        {/* Additional Verification Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+
+          {/* Phone Verification Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background border border-emerald-200 dark:border-emerald-900 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Smartphone className="h-24 w-24 text-emerald-600" /> 
+            </div>
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="h-12 w-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shadow-inner">
+                <Smartphone className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400">Téléphone</p>
+                <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-100 flex items-center gap-2">
+                  Vérifié
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                </h3>
+              </div>
+            </div>
+            <div className="mt-4 text-xs font-semibold text-emerald-800 bg-white/60 dark:bg-emerald-900/40 backdrop-blur-sm border border-emerald-200/50 inline-flex items-center px-3 py-1 rounded-full shadow-sm">
+              <CheckCircle2 className="h-3 w-3 mr-1.5 opacity-70" />
+              Opérateur: Orange SN
+            </div>
+          </div>
+
+          {/* Email Verification Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-cyan-50 to-white dark:from-cyan-950/20 dark:to-background border border-cyan-200 dark:border-cyan-900 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Shield className="h-24 w-24 text-cyan-600" />
+            </div>
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="h-12 w-12 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center shadow-inner">
+                <div className="font-bold text-lg">@</div>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-cyan-800 dark:text-cyan-400">Email</p>
+                <h3 className="text-lg font-bold text-cyan-900 dark:text-cyan-100 flex items-center gap-2">
+                  Vérifié
+                  <CheckCircle2 className="h-5 w-5 text-cyan-600" />
+                </h3>
+              </div>
+            </div>
+            <div className="mt-4 text-xs font-semibold text-cyan-800 bg-white/60 dark:bg-cyan-900/40 backdrop-blur-sm border border-cyan-200/50 inline-flex items-center px-3 py-1 rounded-full shadow-sm">
+              <CheckCircle2 className="h-3 w-3 mr-1.5 opacity-70" />
+              Livrable & Valide
+            </div>
+          </div>
+
+          {/* Personal Info Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-background border border-indigo-200 dark:border-indigo-900 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <UserCheck className="h-24 w-24 text-indigo-600" />
+            </div>
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-inner">
+                <UserCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-indigo-800 dark:text-indigo-400">Infos Personnelles</p>
+                <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
+                  Validées
+                  <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                </h3>
+              </div>
+            </div>
+            <div className="mt-4 text-xs font-semibold text-indigo-800 bg-white/60 dark:bg-indigo-900/40 backdrop-blur-sm border border-indigo-200/50 inline-flex items-center px-3 py-1 rounded-full shadow-sm">
+              <CheckCircle2 className="h-3 w-3 mr-1.5 opacity-70" />
+              Cohérence: 100%
+            </div>
+          </div>
+        </div>
+
+        {/* Trust Banner */}
+        <div className="mb-10 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="flex items-center gap-4">
+            <div className="bg-emerald-100 p-3 rounded-full">
+              <ShieldCheck className="h-8 w-8 text-emerald-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-emerald-900">Confiance</h3>
+              <div className="text-2xl font-bold text-emerald-700">100% Fiable</div>
+            </div>
+          </div>
+          <div className="text-emerald-800 text-sm md:text-right font-medium bg-white/50 px-4 py-2 rounded-lg border border-emerald-100">
+            Aucun fraud detecté, 0 sanction, email et tél vérifiés.
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Document Sidebar */}
+          <div className="lg:col-span-1 space-y-4">
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1 flex items-center gap-2">
+              <div className="h-px bg-border flex-1"></div>
+              Documents
+              <div className="h-px bg-border flex-1"></div>
+            </h3>
+            <div className="space-y-3">
+              {simulationResult.generatedDocuments.map((doc) => (
+                <button
+                  key={doc.id}
+                  onClick={() => setSelectedDocId(doc.id)}
+                  className={cn(
+                    "w-full text-left p-4 rounded-xl border transition-all duration-300 group relative overflow-hidden",
+                    selectedDocId === doc.id
+                      ? "bg-primary text-primary-foreground border-primary shadow-lg ring-1 ring-primary/20 scale-[1.02]"
+                      : "bg-card hover:bg-muted/50 border-border hover:border-primary/30 hover:shadow-sm"
                   )}
-                </div>
-
-                {/* Mock PDF Preview */}
-                <div className="p-6 border-t">
-                  <h3 className="font-medium mb-4">{t('documents.preview')}</h3>
-                  <div className="aspect-[8.5/11] bg-muted rounded-lg flex items-center justify-center border-2 border-dashed">
-                    <div className="text-center text-muted-foreground">
-                      <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                      <p className="text-sm">Aperçu PDF (Démo)</p>
-                      <p className="text-xs mt-1">
-                        {language === 'fr' ? selectedDocument.nameFr : selectedDocument.name}
+                >
+                  <div className="relative z-10 flex items-start gap-3">
+                    <div className={cn(
+                      "mt-0.5 p-2 rounded-lg transition-colors",
+                      selectedDocId === doc.id ? "bg-white/20 text-white" : "bg-muted text-muted-foreground group-hover:text-primary"
+                    )}>
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className={cn("font-medium text-sm leading-tight transition-colors", selectedDocId === doc.id ? "text-white" : "text-foreground group-hover:text-primary")}>
+                        {doc.name}
+                      </p>
+                      <p className={cn("text-[10px] mt-1.5 uppercase tracking-wide font-medium", selectedDocId === doc.id ? "text-white/80" : "text-muted-foreground")}>
+                        {doc.type === 'contract' ? 'Contrat' : 'Formulaire'}
                       </p>
                     </div>
                   </div>
+                  {selectedDocId === doc.id && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent pointer-events-none" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Preview Area */}
+          <div className="lg:col-span-3">
+            {selectedDocument && (
+              <div className="bg-card rounded-2xl border shadow-sm hover:shadow-md transition-shadow duration-500 overflow-hidden h-[850px] flex flex-col animate-fade-in relative group/preview">
+                {/* Header */}
+                <div className="h-16 border-b px-6 flex items-center justify-between bg-white dark:bg-card/50 backdrop-blur-xl z-10">
+                  <h2 className="font-semibold flex items-center gap-2 text-foreground/80">
+                    <div className="p-1.5 bg-primary/10 rounded-md text-primary">
+                      <FileCheck2 className="h-4 w-4" />
+                    </div>
+                    {selectedDocument.name}
+                  </h2>
+                  <div className="flex gap-2 opacity-0 group-hover/preview:opacity-100 transition-opacity duration-300">
+                    <Button size="sm" variant="secondary" onClick={() => window.open(selectedDocument.url, '_blank')} className="shadow-sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Ouvrir
+                    </Button>
+                  </div>
+                </div>
+                {/* PDF Preview */}
+                <div className="flex-1 bg-muted/10 relative">
+                  <iframe
+                    src={`${selectedDocument.url}#toolbar=0&navpanes=0&scrollbar=0`}
+                    className="w-full h-full"
+                    title="Document Preview"
+                  />
                 </div>
               </div>
             )}

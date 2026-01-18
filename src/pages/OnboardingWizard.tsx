@@ -6,21 +6,23 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import Header from '@/components/Header';
 import ProgressStepper from '@/components/ProgressStepper';
 import IdentityStep from '@/components/steps/IdentityStep';
+import DocumentsStep from '@/components/steps/DocumentsStep';
 import BankingStep from '@/components/steps/BankingStep';
 import RegulatoryStep from '@/components/steps/RegulatoryStep';
 import ProductsStep from '@/components/steps/ProductsStep';
 import ReviewStep from '@/components/steps/ReviewStep';
-import { createEmptyOnboarding, DEMO_DATA, type OnboardingData, type OnboardingMode } from '@/types/onboarding';
+import { createEmptyOnboarding, type OnboardingData, type OnboardingMode } from '@/types/onboarding';
 import { toast } from 'sonner';
 
 const STORAGE_KEY = 'autoapply_onboarding';
 
 const steps = [
-  { key: 'identity', labelKey: 'step.identity' },
-  { key: 'banking', labelKey: 'step.banking' },
-  { key: 'regulatory', labelKey: 'step.regulatory' },
-  { key: 'products', labelKey: 'step.products' },
-  { key: 'review', labelKey: 'step.review' },
+  { key: 'identity', labelKey: 'Identité' },
+  { key: 'documents', labelKey: 'Justificatifs' },
+  { key: 'banking', labelKey: 'Compte' },
+  { key: 'products', labelKey: 'Cartes & Wave' },
+  { key: 'regulatory', labelKey: 'Conformité' },
+  { key: 'review', labelKey: 'Vérification' },
 ];
 
 const OnboardingWizard = () => {
@@ -48,55 +50,80 @@ const OnboardingWizard = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...data, currentStep }));
   }, [data, currentStep]);
 
-  const handleScanId = () => {
-    setData((prev) => ({
+  // Handle Fill Cheat Sheet (Demo)
+  const handleFillDemo = () => {
+    setData(prev => ({
       ...prev,
       identity: {
         ...prev.identity,
-        firstName: DEMO_DATA.firstName!,
-        lastName: DEMO_DATA.lastName!,
-        dateOfBirth: DEMO_DATA.dateOfBirth!,
-        placeOfBirth: DEMO_DATA.placeOfBirth!,
-        nationality: DEMO_DATA.nationality!,
-        phone: DEMO_DATA.phone!,
-        address: DEMO_DATA.address!,
+        firstName: "Moussa",
+        lastName: "Diop",
+        dateOfBirth: "1990-05-15",
+        placeOfBirth: "Dakar",
+        nationality: "senegalese",
+        address: "Sicap Amitié 2, Villa 123",
+        phone: "770000000",
+        email: "moussa.diop@nixacom.com",
+        fatherFirstName: "Abdoulaye",
+        motherFirstName: "Fatou",
+        motherLastName: "Ndiaye",
+        occupation: "Commerçant",
+        idNumber: "1234567890123",
+        idIssueDate: "2020-01-01",
+        emergencyContactName: "Frère",
+        emergencyContactPhone: "771111111"
       },
       banking: {
         ...prev.banking,
-        accountNumber: DEMO_DATA.accountNumber!,
-        branch: DEMO_DATA.branch!,
-        activationCode: DEMO_DATA.activationCode!,
+        accountInfoType: 'individual',
+        agency: "dakar-plateau",
+        initialDeposit: "25000",
+        hasMailbox: true,
+        postalAddress: "BP 1234 Dakar",
+        employer: "Nixacom",
+        employedSince: "2015-01-01",
+        profession: "Informaticien",
+        position: "Développeur",
+        idIssueDetails: "Dakar le 01/01/2020",
       },
-      timeline: [
-        ...prev.timeline,
-        {
-          id: crypto.randomUUID(),
-          type: 'id-uploaded',
-          timestamp: new Date().toISOString(),
-          description: 'Pièce d\'identité téléchargée',
-          actor: 'System',
-        },
-        {
-          id: crypto.randomUUID(),
-          type: 'fields-extracted',
-          timestamp: new Date().toISOString(),
-          description: 'Champs extraits automatiquement',
-          actor: 'OCR Engine',
-        },
-      ],
+      products: {
+        ...prev.products,
+        cardType: 'elite',
+        branchCode: '00100',
+        hasWave: true,
+        waveDetails: {
+          idType: 'cni',
+          idCountry: 'SN',
+          idNumber: '1234567890123',
+          activationCode: '556677'
+        }
+      },
+      compliance: {
+        ...prev.compliance,
+        isUsPerson: false,
+        isExclusiveTaxResidentSenegal: true,
+        taxResidences: [],
+        sourceOfFunds: "business",
+        monthlyVolume: "500000-2000000",
+        isPep: false,
+        bicAccountNumber: "SN123456789012",
+        creditInfoConsent: true,
+      }
     }));
-    toast.success(language === 'fr' ? 'Champs pré-remplis avec succès!' : 'Fields auto-filled successfully!');
+    toast.success("Données de démo remplies !");
   };
+
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    
+
     // Simulate generation delay
     await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    const updatedData = {
+
+    const updatedData: OnboardingData = {
       ...data,
       status: 'submitted' as const,
+      updatedAt: new Date().toISOString(),
       timeline: [
         ...data.timeline,
         {
@@ -104,7 +131,7 @@ const OnboardingWizard = () => {
           type: 'signed' as const,
           timestamp: new Date().toISOString(),
           description: 'Documents signés électroniquement',
-          actor: data.identity.firstName + ' ' + data.identity.lastName,
+          actor: `${data.identity.firstName} ${data.identity.lastName}`,
         },
         {
           id: crypto.randomUUID(),
@@ -115,10 +142,10 @@ const OnboardingWizard = () => {
         },
       ],
     };
-    
+
     setData(updatedData);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedData));
-    
+
     // Save to applications list
     const applications = JSON.parse(localStorage.getItem('autoapply_applications') || '[]');
     const existingIndex = applications.findIndex((app: OnboardingData) => app.id === updatedData.id);
@@ -128,7 +155,7 @@ const OnboardingWizard = () => {
       applications.push(updatedData);
     }
     localStorage.setItem('autoapply_applications', JSON.stringify(applications));
-    
+
     setIsGenerating(false);
     toast.success(language === 'fr' ? 'Pack de documents généré!' : 'Document pack generated!');
     navigate(`/onboarding/documents/${updatedData.id}`);
@@ -153,21 +180,20 @@ const OnboardingWizard = () => {
           <IdentityStep
             data={data.identity}
             onChange={(identity) => setData((prev) => ({ ...prev, identity }))}
-            onScanId={handleScanId}
           />
         );
       case 1:
         return (
-          <BankingStep
-            data={data.banking}
-            onChange={(banking) => setData((prev) => ({ ...prev, banking }))}
+          <DocumentsStep
+            data={data.documents || { idDocumentFront: undefined, idDocumentBack: undefined, selfie: undefined }}
+            onChange={(docs) => setData((prev) => ({ ...prev, documents: docs }))}
           />
         );
       case 2:
         return (
-          <RegulatoryStep
-            data={data.regulatory}
-            onChange={(regulatory) => setData((prev) => ({ ...prev, regulatory }))}
+          <BankingStep
+            data={data.banking}
+            onChange={(banking) => setData((prev) => ({ ...prev, banking }))}
           />
         );
       case 3:
@@ -178,6 +204,22 @@ const OnboardingWizard = () => {
           />
         );
       case 4:
+        return (
+          <RegulatoryStep
+            data={data.compliance || {
+              isUsPerson: false,
+              isExclusiveTaxResidentSenegal: true,
+              taxResidences: [],
+              sourceOfFunds: '',
+              monthlyVolume: '',
+              isPep: false,
+              bicAccountNumber: '',
+              creditInfoConsent: false
+            }}
+            onChange={(compliance) => setData((prev) => ({ ...prev, compliance }))}
+          />
+        );
+      case 5:
         return (
           <ReviewStep
             onboardingData={data}
@@ -212,6 +254,9 @@ const OnboardingWizard = () => {
                 currentStep={currentStep}
                 onStepClick={setCurrentStep}
               />
+              <Button variant="ghost" size="sm" onClick={handleFillDemo} className="w-full mt-4 text-xs text-muted-foreground dashed border">
+                Remplir (Démo)
+              </Button>
             </div>
           </aside>
 
@@ -221,7 +266,7 @@ const OnboardingWizard = () => {
               {renderStep()}
 
               {/* Navigation */}
-              {currentStep < 4 && (
+              {currentStep < 5 && (
                 <div className="flex justify-between mt-8 pt-6 border-t">
                   <Button
                     variant="outline"

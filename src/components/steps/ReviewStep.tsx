@@ -30,40 +30,56 @@ const ReviewStep = ({
 
   const sections = [
     {
-      title: t('step.identity'),
+      title: "Identité (EER)",
       fields: [
-        { label: t('identity.firstName'), value: onboardingData.identity.firstName },
-        { label: t('identity.lastName'), value: onboardingData.identity.lastName },
-        { label: t('identity.dob'), value: onboardingData.identity.dateOfBirth },
-        { label: t('identity.pob'), value: onboardingData.identity.placeOfBirth },
-        { label: t('identity.phone'), value: onboardingData.identity.phone },
-        { label: t('identity.address'), value: onboardingData.identity.address },
+        { label: "Nom & Prénom", value: `${onboardingData.identity.firstName} ${onboardingData.identity.lastName}` },
+        { label: "Date Naissance", value: onboardingData.identity.dateOfBirth },
+        { label: "Lieu Naissance", value: onboardingData.identity.placeOfBirth },
+        { label: "Nationalité", value: onboardingData.identity.nationality },
+        { label: "Profession", value: onboardingData.identity.occupation },
+        { label: "Adresse", value: onboardingData.identity.address },
+        { label: "Téléphone", value: onboardingData.identity.phone },
+        { label: "Email", value: onboardingData.identity.email },
+        { label: "Père", value: onboardingData.identity.fatherFirstName },
+        { label: "Mère", value: `${onboardingData.identity.motherFirstName} ${onboardingData.identity.motherLastName}` },
       ],
     },
     {
-      title: t('step.banking'),
+      title: "Compte (BIMAO)",
       fields: [
-        { label: t('banking.accountNumber'), value: onboardingData.banking.accountNumber },
-        { label: t('banking.branch'), value: onboardingData.banking.branch },
-        { label: t('banking.activationCode'), value: onboardingData.banking.activationCode },
+        { label: "Type", value: onboardingData.banking.accountInfoType === 'corporate' ? 'Société' : 'Particulier' },
+        { label: "Agence", value: onboardingData.banking.agency },
+        { label: "Dépôt Initial", value: onboardingData.banking.initialDeposit + ' FCFA' },
+        ...(onboardingData.banking.accountInfoType === 'individual' ? [
+          { label: "Profession", value: onboardingData.banking.profession },
+          { label: "Fonction", value: onboardingData.banking.position },
+          { label: "Employeur", value: onboardingData.banking.employer },
+          { label: "Adresse Postale", value: onboardingData.banking.postalAddress },
+        ] : [
+          { label: "Société", value: onboardingData.banking.companyName },
+          { label: "Forme Juridique", value: onboardingData.banking.legalForm },
+          { label: "Siège Social", value: onboardingData.banking.headquarters },
+          { label: "N° Compte Principal", value: onboardingData.banking.isMainAccount ? 'Oui' : onboardingData.banking.mainAccountNumber },
+          { label: "Introduit par", value: onboardingData.banking.introducedBy },
+        ]),
       ],
     },
     {
-      title: t('step.regulatory'),
+      title: "Conformité & Banque",
       fields: [
-        { label: t('regulatory.fatca.usPerson'), value: onboardingData.regulatory.isUsPerson ? t('common.yes') : t('common.no') },
-        { label: t('regulatory.sourceOfFunds'), value: onboardingData.regulatory.sourceOfFunds },
-        { label: t('regulatory.monthlyVolume'), value: onboardingData.regulatory.expectedMonthlyVolume },
-        { label: t('regulatory.occupation'), value: onboardingData.regulatory.occupation },
-        { label: t('regulatory.pep'), value: onboardingData.regulatory.isPep ? t('common.yes') : t('common.no') },
+        { label: "US Person", value: onboardingData.compliance.isUsPerson ? "Oui" : "Non" },
+        { label: "Résidence Fiscale", value: onboardingData.compliance.isExclusiveTaxResidentSenegal ? "Sénégal (Exclusif)" : `${onboardingData.compliance.taxResidences.length} pays` },
+        { label: "N° Compte BIC", value: onboardingData.compliance.bicAccountNumber },
+        { label: "Provenance fonds", value: onboardingData.compliance.sourceOfFunds },
+        { label: "Volume Mensuel", value: onboardingData.compliance.monthlyVolume },
+        { label: "PPE", value: onboardingData.compliance.isPep ? "Oui" : "Non" },
+        // Bank Reserve Summary
+        { label: "Carnet Chèque", value: onboardingData.banking.checkbookAuthorized ? "Autorisé" : "Non" },
+        { label: "Ordre Virement", value: onboardingData.banking.orderBookAuthorized ? "Autorisé" : "Non" },
       ],
     },
   ];
 
-  const selectedProducts = [];
-  if (onboardingData.products.currentAccount) selectedProducts.push(t('products.currentAccount'));
-  if (onboardingData.products.bankCard) selectedProducts.push(t('products.bankCard'));
-  if (onboardingData.products.waveWallet) selectedProducts.push(t('products.wave'));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -77,23 +93,34 @@ const ReviewStep = ({
             {section.fields.map((field) => (
               <div key={field.label} className="flex justify-between py-2 border-b border-border/50">
                 <span className="text-muted-foreground text-sm">{field.label}</span>
-                <span className="font-medium text-sm">{field.value || '—'}</span>
+                <span className="font-medium text-sm text-right">{field.value || '—'}</span>
               </div>
             ))}
           </div>
         </div>
       ))}
 
-      {/* Products */}
+      {/* Products & Documents Summary */}
       <div className="form-section">
-        <h3 className="font-medium mb-4">{t('products.title')}</h3>
-        <div className="flex flex-wrap gap-2">
-          {selectedProducts.map((product) => (
-            <span key={product} className="badge-info">{product}</span>
-          ))}
-          {selectedProducts.length === 0 && (
-            <span className="text-muted-foreground text-sm">Aucun produit sélectionné</span>
-          )}
+        <h3 className="font-medium mb-4">Produits & Documents sélectionnés</h3>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {onboardingData.products.cardType !== 'none' && <span className="badge-info">Carte {onboardingData.products.cardType.toUpperCase()}</span>}
+          {onboardingData.products.hasWave && <span className="badge-info">Wave (B2W)</span>}
+          {onboardingData.banking.hasMailbox && <span className="badge-info">Boîte Postale</span>}
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <div className={`w-2 h-2 rounded-full ${onboardingData.documents.idDocumentFront ? 'bg-green-500' : 'bg-red-500'}`} />
+            CNI Recto
+          </div>
+          <div className="flex items-center gap-1">
+            <div className={`w-2 h-2 rounded-full ${onboardingData.documents.idDocumentBack ? 'bg-green-500' : 'bg-red-500'}`} />
+            CNI Verso
+          </div>
+          <div className="flex items-center gap-1">
+            <div className={`w-2 h-2 rounded-full ${onboardingData.documents.selfie ? 'bg-green-500' : 'bg-red-500'}`} />
+            Selfie
+          </div>
         </div>
       </div>
 
@@ -133,8 +160,8 @@ const ReviewStep = ({
             checked={signatureData.readAndApproved}
             onCheckedChange={(checked) => handleChange('readAndApproved', checked as boolean)}
           />
-          <Label htmlFor="readApproved" className="cursor-pointer">
-            {t('review.readApproved')}
+          <Label htmlFor="readApproved" className="cursor-pointer text-sm">
+            {t('review.readApproved')} (CGU, Convention de Compte, Contrat Carte, Formulaire BIC/FATCA/EER)
           </Label>
         </div>
       </div>

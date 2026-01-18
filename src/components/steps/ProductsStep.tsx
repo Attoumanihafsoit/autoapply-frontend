@@ -1,9 +1,10 @@
-import { CreditCard, Wallet, Building2, Check } from 'lucide-react';
+import { CreditCard, Smartphone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useLanguage } from '@/contexts/LanguageContext';
-import type { ProductsData, IdDocumentType } from '@/types/onboarding';
+import { type ProductsData, type IdDocumentType } from '@/types/onboarding';
 
 interface ProductsStepProps {
   data: ProductsData;
@@ -11,118 +12,107 @@ interface ProductsStepProps {
 }
 
 const ProductsStep = ({ data, onChange }: ProductsStepProps) => {
-  const { t } = useLanguage();
 
-  const toggleProduct = (field: 'currentAccount' | 'bankCard' | 'waveWallet') => {
-    onChange({ ...data, [field]: !data[field] });
-  };
-
-  const handleWaveDetailChange = (field: keyof NonNullable<ProductsData['waveDetails']>, value: string) => {
+  const handleWaveChange = (field: keyof NonNullable<ProductsData['waveDetails']>, value: string) => {
     onChange({
       ...data,
       waveDetails: {
-        idType: data.waveDetails?.idType || 'cni',
-        idCountry: data.waveDetails?.idCountry || '',
-        idNumber: data.waveDetails?.idNumber || '',
-        [field]: value,
-      },
+        ...(data.waveDetails || { idType: 'cni', idCountry: 'SN', idNumber: '', activationCode: '' }),
+        [field]: value
+      }
     });
   };
 
-  const products = [
-    {
-      key: 'currentAccount' as const,
-      icon: Building2,
-      selected: data.currentAccount,
-    },
-    {
-      key: 'bankCard' as const,
-      icon: CreditCard,
-      selected: data.bankCard,
-    },
-    {
-      key: 'waveWallet' as const,
-      icon: Wallet,
-      selected: data.waveWallet,
-    },
-  ];
-
   return (
-    <div className="space-y-6 animate-fade-in">
-      <h2 className="text-xl font-semibold">{t('products.title')}</h2>
+    <div className="space-y-8 animate-fade-in">
+      <h2 className="text-xl font-semibold mb-6">Produits & Services</h2>
 
-      <div className="grid gap-4">
-        {products.map(({ key, icon: Icon, selected }) => (
-          <div
-            key={key}
-            onClick={() => toggleProduct(key)}
-            className={`card-feature cursor-pointer transition-all ${
-              selected ? 'border-primary bg-accent/30 ring-2 ring-primary/20' : ''
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-xl ${selected ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                <Icon className="h-6 w-6" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium">{t(`products.${key}`)}</h3>
-              </div>
-              <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                  selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-                }`}
-              >
-                {selected && <Check className="h-4 w-4" />}
-              </div>
+      {/* CARTE */}
+      <div className="form-section">
+        <div className="flex items-center gap-2 mb-4">
+          <CreditCard className="h-5 w-5 text-primary" />
+          <h3 className="font-medium text-lg">Contrat Carte Bancaire</h3>
+        </div>
+
+        <RadioGroup
+          value={data.cardType}
+          onValueChange={(v) => onChange({ ...data, cardType: v as any })}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+          {['azur', 'elite', 'platine'].map((type) => (
+            <div key={type} className={`relative flex flex-col items-center justify-between border-2 rounded-xl p-4 cursor-pointer hover:bg-accent/50 ${data.cardType === type ? 'border-primary bg-primary/5' : 'border-border'}`}>
+              <RadioGroupItem value={type} id={type} className="absolute top-4 right-4" />
+              <Label htmlFor={type} className="flex flex-col items-center gap-2 cursor-pointer w-full h-full">
+                <span className="font-bold uppercase tracking-widest text-lg">{type}</span>
+                <span className="text-xs text-muted-foreground text-center">Carte {type === 'platine' ? 'PRESTIGE' : type === 'elite' ? 'PREMIUM' : 'STANDARD'}</span>
+              </Label>
+            </div>
+          ))}
+          <div className={`relative flex items-center justify-center border-2 rounded-xl p-4 cursor-pointer border-dashed ${data.cardType === 'none' ? 'border-primary' : 'border-border'}`}>
+            <RadioGroupItem value="none" id="none" className="mr-2" />
+            <Label htmlFor="none" className="cursor-pointer">Pas de carte</Label>
+          </div>
+        </RadioGroup>
+
+        {data.cardType !== 'none' && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 animate-slide-up">
+            <div className="space-y-2">
+              <Label>Code Guichet</Label>
+              <Input value={data.branchCode} onChange={(e) => onChange({ ...data, branchCode: e.target.value })} placeholder="00000" />
+            </div>
+            <div className="space-y-2">
+              <Label>Numéro de Compte</Label>
+              <Input value={data.accountNumber || ''} onChange={(e) => onChange({ ...data, accountNumber: e.target.value })} placeholder="123456789012" />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Raison Sociale</Label>
+              <Input value={data.companyName || ''} onChange={(e) => onChange({ ...data, companyName: e.target.value })} placeholder="Nom de la société (Si applicable)" />
             </div>
           </div>
-        ))}
+        )}
       </div>
 
-      {data.waveWallet && (
-        <div className="form-section animate-slide-up">
-          <h3 className="font-medium mb-4">Informations B2W WAVE</h3>
-          
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label>{t('products.wave.idType')}</Label>
-              <Select
-                value={data.waveDetails?.idType || 'cni'}
-                onValueChange={(v) => handleWaveDetailChange('idType', v as IdDocumentType)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cni">{t('products.wave.idType.cni')}</SelectItem>
-                  <SelectItem value="passport">{t('products.wave.idType.passport')}</SelectItem>
-                  <SelectItem value="consular">{t('products.wave.idType.consular')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* WAVE */}
+      <div className="form-section">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5 text-blue-500" />
+            <h3 className="font-medium text-lg">Contrat Wave (B2W)</h3>
+          </div>
+          <Switch checked={data.hasWave} onCheckedChange={(c) => onChange({ ...data, hasWave: c })} />
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="idCountry">{t('products.wave.idCountry')}</Label>
-              <Input
-                id="idCountry"
-                value={data.waveDetails?.idCountry || ''}
-                onChange={(e) => handleWaveDetailChange('idCountry', e.target.value)}
-                placeholder="Sénégal"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="idNumber">{t('products.wave.idNumber')}</Label>
-              <Input
-                id="idNumber"
-                value={data.waveDetails?.idNumber || ''}
-                onChange={(e) => handleWaveDetailChange('idNumber', e.target.value)}
-                placeholder="1234567890123"
-              />
+        {data.hasWave && (
+          <div className="space-y-4 pt-4 border-t animate-slide-up">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Type de ID Wave</Label>
+                <Select value={data.waveDetails?.idType} onValueChange={(v) => handleWaveChange('idType', v as IdDocumentType)}>
+                  <SelectTrigger> <SelectValue /> </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cni">CNI</SelectItem>
+                    <SelectItem value="passport">Passeport</SelectItem>
+                    <SelectItem value="consular">Carte Consulaire</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Pays ID</Label>
+                <Input value={data.waveDetails?.idCountry} onChange={(e) => handleWaveChange('idCountry', e.target.value)} placeholder="SN" />
+              </div>
+              <div className="space-y-2">
+                <Label>Numéro ID Wave</Label>
+                <Input value={data.waveDetails?.idNumber} onChange={(e) => handleWaveChange('idNumber', e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Code d'Activation</Label>
+                <Input value={data.waveDetails?.activationCode} onChange={(e) => handleWaveChange('activationCode', e.target.value)} placeholder="Reçu par SMS" />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
     </div>
   );
 };
