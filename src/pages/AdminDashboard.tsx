@@ -16,19 +16,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Header from '@/components/Header';
 import StatusBadge from '@/components/StatusBadge';
-import type { OnboardingData, OnboardingStatus } from '@/types/onboarding';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr as frLocale, enUS } from 'date-fns/locale';
 
-// Demo Data (Reused)
-const DEMO_APPLICATIONS: OnboardingData[] = [
+const DEMO_APPLICATIONS: any[] = [
   {
     id: 'demo-1',
     mode: 'in-branch',
     status: 'submitted',
-    currentStep: 5,
-    identity: {
+    step1: {
       firstName: 'Fatou',
       lastName: 'Sow',
       dateOfBirth: '1990-03-22',
@@ -37,119 +34,22 @@ const DEMO_APPLICATIONS: OnboardingData[] = [
       phone: '+221 78 234 56 78',
       email: 'fatou.sow@example.com',
       address: '45 Avenue Cheikh Anta Diop, Dakar',
-      occupation: 'Médecin',
-      fatherFirstName: 'Amadou',
-      motherFirstName: 'Aminata',
-      motherLastName: 'Diop',
+    },
+    step2: {
+      idType: 'cni',
       idNumber: '1234567890123',
       idIssueDate: '2020-01-01',
-      emergencyContactName: 'Moussa Sow',
-      emergencyContactPhone: '+221 77 000 00 00'
+      idExpiryDate: '2030-01-01'
     },
-    banking: {
-      accountInfoType: 'individual',
-      agency: 'dakar-almadies',
-      initialDeposit: '50000',
-      hasMailbox: true,
-      // Individual
-      postalAddress: 'BP 1234',
-      employer: 'Hôpital Principal',
-      employedSince: '2015-05-10',
-      profession: 'Médecin Généraliste',
-      idIssueDetails: 'Dakar le 20/01/2020',
-      // Corporate Placeholder
-      companyName: '', headquarters: '', mailingAddress: '', legalForm: '',
-      hasRelatedAccounts: false, isMainAccount: true, mainAccountNumber: '',
-      mergeInterests: false, bankingReferences: '', maintenanceFees: '',
-      keepExtracts: false, otherReferences: '', introducedBy: '',
-      submittedDocs: { delegation: false, statuts: false, pouvoirs: false, rccm: false, specimen: false, autres: '' },
-      checkbookAuthorized: false, orderBookAuthorized: false, waitForInfo: false, waitForFunds: false, bankComments: ''
-    },
-    documents: {
-      idDocumentFront: undefined, idDocumentBack: undefined, selfie: undefined
-    },
-    compliance: {
-      isUsPerson: false,
-      isExclusiveTaxResidentSenegal: true,
-      taxResidences: [],
-      sourceOfFunds: 'salary',
-      monthlyVolume: '2000000-10000000',
-      isPep: false,
-      bicAccountNumber: 'SN0123456789',
-      creditInfoConsent: true
-    },
-    products: {
-      cardType: 'platine',
-      branchCode: '00123',
-      hasWave: false,
-    },
-    signature: {
-      readAndApproved: true,
-      signatureDate: '2024-01-15',
-      signatureLocation: 'Dakar',
-    },
+    step3: { profession: 'Médecin', employer: 'Hôpital Principal', employedSince: '2015-05-10' },
+    step4: { openIndividualAccount: 'yes', requestCheckbook: 'yes', requestCard: 'yes', cardType: 'platine', activateOrangeMoney: 'yes' },
+    step5: { agencyName: 'Dakar Almadies', branchCode: '00123', accountNumber: '01234567890', ribKey: '12' },
+    step6: { idFrontImage: undefined, livenessPassed: true, faceMatchPassed: true },
     createdAt: '2024-01-15T09:30:00Z',
     updatedAt: '2024-01-15T10:45:00Z',
     timeline: [
       { id: '1', type: 'created', timestamp: '2024-01-15T09:30:00Z', description: 'Onboarding créé', actor: 'System' },
-      { id: '2', type: 'id-uploaded', timestamp: '2024-01-15T09:35:00Z', description: 'Pièce identité téléchargée', actor: 'Fatou Sow' },
       { id: '4', type: 'submitted', timestamp: '2024-01-15T10:45:00Z', description: 'Dossier soumis', actor: 'System' },
-    ],
-  },
-  {
-    id: 'demo-2',
-    mode: 'remote',
-    status: 'approved',
-    currentStep: 5,
-    identity: {
-      firstName: 'Tech Solutions',
-      lastName: 'SARL',
-      dateOfBirth: '2018-01-01', // Date creation
-      placeOfBirth: 'Dakar',
-      nationality: 'senegalese',
-      phone: '+221 33 800 00 00',
-      email: 'contact@techsolutions.sn',
-      address: 'Immeuble ABC, Plateau',
-      occupation: 'Services Informatiques',
-      fatherFirstName: '', motherFirstName: '', motherLastName: '',
-      idNumber: 'RCCM-DKR-2018-B-12345', idIssueDate: '', emergencyContactName: '', emergencyContactPhone: ''
-    },
-    banking: {
-      accountInfoType: 'corporate',
-      agency: 'dakar-plateau',
-      initialDeposit: '1000000',
-      hasMailbox: true,
-      // Individual
-      postalAddress: '', employer: '', employedSince: '', profession: '', idIssueDetails: '',
-      // Corporate
-      companyName: 'Tech Solutions SARL',
-      headquarters: 'Dakar Plateau',
-      mailingAddress: 'BP 9999',
-      legalForm: 'SARL',
-      hasRelatedAccounts: false, isMainAccount: true, mainAccountNumber: '',
-      mergeInterests: false, bankingReferences: 'SGBS', maintenanceFees: '2500',
-      keepExtracts: true, otherReferences: '', introducedBy: 'Mr Directeur',
-      submittedDocs: { delegation: true, statuts: true, pouvoirs: true, rccm: true, specimen: true, autres: '' },
-      checkbookAuthorized: true, orderBookAuthorized: true, waitForInfo: false, waitForFunds: false, bankComments: 'Client VIP'
-    },
-    documents: { idDocumentFront: undefined, idDocumentBack: undefined, selfie: undefined },
-    compliance: {
-      isUsPerson: false,
-      isExclusiveTaxResidentSenegal: true,
-      taxResidences: [],
-      sourceOfFunds: 'business',
-      monthlyVolume: '10000000+',
-      isPep: false,
-      bicAccountNumber: '', creditInfoConsent: true
-    },
-    products: { cardType: 'none', branchCode: '00001', hasWave: true },
-    signature: { readAndApproved: true, signatureDate: '2024-01-10', signatureLocation: 'Dakar' },
-    createdAt: '2024-01-10T14:00:00Z',
-    updatedAt: '2024-01-12T11:30:00Z',
-    timeline: [
-      { id: '1', type: 'created', timestamp: '2024-01-10T14:00:00Z', description: 'Onboarding créé', actor: 'System' },
-      { id: '2', type: 'submitted', timestamp: '2024-01-10T15:30:00Z', description: 'Dossier soumis', actor: 'System' },
-      { id: '3', type: 'approved', timestamp: '2024-01-12T11:30:00Z', description: 'Approuvé par Comité', actor: 'Admin' },
     ],
   }
 ];
@@ -157,13 +57,11 @@ const DEMO_APPLICATIONS: OnboardingData[] = [
 const AdminDashboard = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
-  const [applications, setApplications] = useState<OnboardingData[]>([]);
-  const [selectedApp, setSelectedApp] = useState<OnboardingData | null>(null);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [selectedApp, setSelectedApp] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showRequestInfoDialog, setShowRequestInfoDialog] = useState(false);
   const [requestInfoMessage, setRequestInfoMessage] = useState('');
-
-  // For document preview modal
   const [previewDoc, setPreviewDoc] = useState<{ title: string, src?: string } | null>(null);
 
   useEffect(() => {
@@ -171,33 +69,30 @@ const AdminDashboard = () => {
       const saved = JSON.parse(localStorage.getItem('autoapply_applications') || '[]');
       const demoIds = DEMO_APPLICATIONS.map(d => d.id);
 
-      // Filter out corrupted data safely
       const userApps = saved.filter((app: any) =>
         !demoIds.includes(app.id) &&
-        app.identity &&
-        app.banking &&
-        app.compliance
+        app.step1
       );
 
       const combined = [...DEMO_APPLICATIONS, ...userApps].sort((a, b) =>
         new Date(b.createdAt || new Date()).getTime() - new Date(a.createdAt || new Date()).getTime()
       );
-      setApplications(combined as OnboardingData[]);
-      if (combined.length > 0) setSelectedApp(combined[0] as OnboardingData);
+      setApplications(combined);
+      if (combined.length > 0) setSelectedApp(combined[0]);
     } catch (error) {
       console.error("Error loading apps", error);
       setApplications(DEMO_APPLICATIONS);
     }
   }, []);
 
-  const handleStatusChange = (appId: string, newStatus: OnboardingStatus) => {
+  const handleStatusChange = (appId: string, newStatus: string) => {
     setApplications((prev) =>
       prev.map((app) =>
         app.id === appId ? { ...app, status: newStatus } : app
       )
     );
     if (selectedApp && selectedApp.id === appId) {
-      setSelectedApp(prev => prev ? ({ ...prev, status: newStatus }) : null);
+      setSelectedApp((prev: any) => prev ? ({ ...prev, status: newStatus }) : null);
     }
     toast.success("Statut mis à jour");
   };
@@ -212,14 +107,17 @@ const AdminDashboard = () => {
 
   const formatDate = (dateString: string) => {
     try {
+      if(!dateString) return '';
       return format(new Date(dateString), 'dd MMM yyyy HH:mm', { locale: language === 'fr' ? frLocale : enUS });
     } catch { return dateString; }
   };
 
-  const filteredApps = applications.filter(app =>
-    app.identity.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.identity.firstName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredApps = applications.filter(app => {
+    const lastName = app.step1?.lastName || '';
+    const firstName = app.step1?.firstName || '';
+    return lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           firstName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden relative">
@@ -256,19 +154,19 @@ const AdminDashboard = () => {
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${app.banking.accountInfoType === 'corporate' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                      {app.banking.accountInfoType === 'corporate' ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-green-100 text-green-700">
+                      <User className="h-4 w-4" />
                     </div>
                     <div>
-                      <h3 className="font-medium text-sm leading-tight">{app.identity.firstName} {app.identity.lastName}</h3>
-                      <p className="text-xs text-muted-foreground capitalize">{app.banking.accountInfoType === 'corporate' ? 'Société' : 'Particulier'}</p>
+                      <h3 className="font-medium text-sm leading-tight">{app.step1?.firstName} {app.step1?.lastName}</h3>
+                      <p className="text-xs text-muted-foreground capitalize">Particulier</p>
                     </div>
                   </div>
-                  <StatusBadge status={app.status} />
+                  <StatusBadge status={app.status || 'submitted'} />
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{formatDate(app.createdAt).split(' ')[0]}</span>
-                  <span className="flex items-center gap-1">{app.mode === 'in-branch' ? 'Agence' : 'Distance'} <ArrowUpRight className="h-3 w-3" /></span>
+                  <span>{formatDate(app.createdAt || new Date().toISOString()).split(' ')[0]}</span>
+                  <span className="flex items-center gap-1">Distance <ArrowUpRight className="h-3 w-3" /></span>
                 </div>
               </div>
             ))}
@@ -283,17 +181,17 @@ const AdminDashboard = () => {
               <div className="h-16 border-b flex items-center justify-between px-6 shrink-0 bg-background/80 backdrop-blur-sm z-10">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                    {selectedApp.identity.firstName[0]}{selectedApp.identity.lastName[0]}
+                    {selectedApp.step1?.firstName?.[0] || ''}{selectedApp.step1?.lastName?.[0] || ''}
                   </div>
                   <div>
-                    <h2 className="font-bold text-lg">{selectedApp.identity.firstName} {selectedApp.identity.lastName}</h2>
+                    <h2 className="font-bold text-lg">{selectedApp.step1?.firstName} {selectedApp.step1?.lastName}</h2>
                     <p className="text-xs text-muted-foreground flex items-center gap-2">
-                      ID: {selectedApp.id.slice(0, 8)} • <span className="uppercase">{selectedApp.banking.accountInfoType}</span>
+                      ID: {selectedApp.id.slice(0, 8)} • <span className="uppercase">INDIVIDUEL</span>
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {selectedApp.status === 'submitted' && (
+                  {(!selectedApp.status || selectedApp.status === 'submitted') && (
                     <>
                       <Button variant="outline" size="sm" onClick={() => setShowRequestInfoDialog(true)} className="text-orange-600 border-orange-200 hover:bg-orange-50">
                         <MessageSquare className="h-4 w-4 mr-2" /> Demander Info
@@ -337,28 +235,19 @@ const AdminDashboard = () => {
                           </CardContent>
                         </Card>
                         <Card>
-                          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Volume Mensuel</CardTitle></CardHeader>
-                          <CardContent>
-                            <div className="text-lg font-bold truncate">{selectedApp.compliance.monthlyVolume}</div>
-                            <p className="text-xs text-muted-foreground mt-1">Est. FCFA</p>
-                          </CardContent>
-                        </Card>
-                        <Card>
                           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Agence</CardTitle></CardHeader>
                           <CardContent>
-                            <div className="text-lg font-bold truncate">{selectedApp.banking.agency}</div>
+                            <div className="text-lg font-bold truncate">{selectedApp.step5?.agencyName || 'N/A'}</div>
                           </CardContent>
                         </Card>
-
-                        {/* TRUST SIGNAL CARD */}
-                        <Card className="bg-emerald-50 border-emerald-200">
-                          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-emerald-800">Confiance</CardTitle></CardHeader>
+                        <Card className="md:col-span-2 bg-emerald-50 border-emerald-200">
+                          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-emerald-800">Confiance globale</CardTitle></CardHeader>
                           <CardContent>
                             <div className="text-2xl font-bold text-emerald-700 flex items-center gap-2">
                               100% Fiable
                             </div>
                             <p className="text-[10px] text-emerald-700/80 mt-1 font-medium leading-tight">
-                              Aucun fraud detecté, 0 sanction, email et tél vérifiés.
+                              Aucune fraude détectée, identité vérifiée biométriquement.
                             </p>
                           </CardContent>
                         </Card>
@@ -368,8 +257,8 @@ const AdminDashboard = () => {
                         <h3 className="font-semibold mb-4 flex items-center gap-2"><Clock className="h-4 w-4" /> Timeline</h3>
                         <div className="space-y-4 relative pl-2">
                           <div className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
-                          {selectedApp.timeline.map((event) => (
-                            <div key={event.id} className="relative pl-6">
+                          {(selectedApp.timeline || []).map((event: any, idx: number) => (
+                            <div key={idx} className="relative pl-6">
                               <div className="absolute left-0 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-primary bg-background z-10" />
                               <p className="text-sm font-medium">{event.description}</p>
                               <p className="text-xs text-muted-foreground">{formatDate(event.timestamp)} • {event.actor}</p>
@@ -379,10 +268,9 @@ const AdminDashboard = () => {
                       </div>
                     </TabsContent>
 
-                    {/* VERIFICATION TAB (New) */}
+                    {/* VERIFICATION TAB */}
                     <TabsContent value="verification" className="mt-0">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Identity Verification Card */}
                         <Card className="border-t-4 border-t-green-500">
                           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -396,66 +284,8 @@ const AdminDashboard = () => {
                               <span className="text-sm text-muted-foreground">Statut</span>
                               <span className="text-sm font-bold text-green-600">PASSED</span>
                             </div>
-                            <DetailRow label="Type de document" value={selectedApp.documents.idDocumentFront ? "Carte Nationale d'Identité" : "Non soumis"} />
-                            <DetailRow label="Tranche d'âge" value="25-35 Ans" />
+                            <DetailRow label="Type de document" value={selectedApp.step2?.idType ? "Carte Nationale d'Identité" : "Non soumis"} />
                             <DetailRow label="Confiance biométrique" value={<span className="text-blue-600 font-bold">99.3%</span>} />
-                            <DetailRow label="Qualité image" value="Reflets détectés, Nette" />
-                          </CardContent>
-                        </Card>
-
-                        {/* Phone Verification Card */}
-                        <Card className="border-t-4 border-t-green-500">
-                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-lg font-bold flex items-center gap-2">
-                              <Smartphone className="h-5 w-5 text-green-600" />
-                              Vérification téléphone
-                            </CardTitle>
-                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">✓ API LIVE</Badge>
-                          </CardHeader>
-                          <CardContent className="space-y-4 pt-4">
-                            <div className="flex justify-between items-center border-b pb-2">
-                              <span className="text-sm text-muted-foreground">Numéro</span>
-                              <span className="text-sm font-bold text-green-600">Valide</span>
-                            </div>
-                            <DetailRow label="Opérateur" value="Orange Sénégal" />
-                            <DetailRow label="Pays & Type" value="SN - Mobile" />
-                            <DetailRow label="Score de risque" value={<span className="text-green-600 font-bold">1 (Faible)</span>} />
-                            <div className="pt-2">
-                              <span className="text-xs text-muted-foreground block mb-2">Comptes liés détectés :</span>
-                              <div className="flex gap-2">
-                                <SocialIcon icon={<Facebook className="h-3 w-3" />} label="Facebook" />
-                                <SocialIcon icon={<Twitter className="h-3 w-3" />} label="Twitter/X" />
-                                <SocialIcon icon={<Linkedin className="h-3 w-3" />} label="LinkedIn" />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        {/* Email & Profile Card */}
-                        <Card className="md:col-span-2">
-                          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Analyse Globale du Profil</CardTitle></CardHeader>
-                          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100">
-                              <Shield className="h-8 w-8 text-green-600" />
-                              <div>
-                                <p className="font-bold text-green-900">Pas de Sanctions</p>
-                                <p className="text-xs text-green-700">Aucune correspondance sur les listes noires (UN, OFAC, EU).</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                              <div className="h-8 w-8 rounded-full bg-blue-200 flex items-center justify-center text-blue-700 font-bold">@</div>
-                              <div>
-                                <p className="font-bold text-blue-900">Email Vérifié</p>
-                                <p className="text-xs text-blue-700">Domaine valide, pas de fuite de données connue.</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
-                              <ThumbsUp className="h-8 w-8 text-purple-600" />
-                              <div>
-                                <p className="font-bold text-purple-900">Profil Réel</p>
-                                <p className="text-xs text-purple-700">Forte probabilité d'une personne physique réelle.</p>
-                              </div>
-                            </div>
                           </CardContent>
                         </Card>
                       </div>
@@ -466,25 +296,25 @@ const AdminDashboard = () => {
                       <Card>
                         <CardHeader><CardTitle>Informations Personnelles</CardTitle></CardHeader>
                         <CardContent className="grid grid-cols-2 gap-x-12 gap-y-6">
-                          <DetailItem label="Prénom" value={selectedApp.identity.firstName} />
-                          <DetailItem label="Nom" value={selectedApp.identity.lastName} />
-                          <DetailItem label="Date de Naissance" value={selectedApp.identity.dateOfBirth} />
-                          <DetailItem label="Lieu de Naissance" value={selectedApp.identity.placeOfBirth} />
-                          <DetailItem label="Nationalité" value={selectedApp.identity.nationality} />
-                          <DetailItem label="Profession" value={selectedApp.identity.occupation} />
+                          <DetailItem label="Prénom" value={selectedApp.step1?.firstName} />
+                          <DetailItem label="Nom" value={selectedApp.step1?.lastName} />
+                          <DetailItem label="Date de Naissance" value={selectedApp.step1?.dateOfBirth} />
+                          <DetailItem label="Lieu de Naissance" value={selectedApp.step1?.placeOfBirth} />
+                          <DetailItem label="Nationalité" value={selectedApp.step1?.nationality} />
+                          <DetailItem label="Profession" value={selectedApp.step3?.profession} />
                           <div className="col-span-2 border-t pt-4 mt-2">
                             <h4 className="font-semibold mb-4 text-sm">Coordonnées</h4>
                             <div className="grid grid-cols-2 gap-x-12 gap-y-6">
-                              <DetailItem label="Téléphone" value={selectedApp.identity.phone} />
-                              <DetailItem label="Email" value={selectedApp.identity.email} />
-                              <DetailItem label="Adresse" value={selectedApp.identity.address} full />
+                              <DetailItem label="Téléphone" value={selectedApp.step1?.phone} />
+                              <DetailItem label="Email" value={selectedApp.step1?.email} />
+                              <DetailItem label="Adresse" value={selectedApp.step1?.address} full />
                             </div>
                           </div>
                           <div className="col-span-2 border-t pt-4 mt-2">
                             <h4 className="font-semibold mb-4 text-sm">Pièce d'Identité</h4>
                             <div className="grid grid-cols-2 gap-x-12 gap-y-6">
-                              <DetailItem label="Numéro ID" value={selectedApp.identity.idNumber} />
-                              <DetailItem label="Délivrée le" value={selectedApp.identity.idIssueDate} />
+                              <DetailItem label="Numéro ID" value={selectedApp.step2?.idNumber} />
+                              <DetailItem label="Délivrée le" value={selectedApp.step2?.idIssueDate} />
                             </div>
                           </div>
                         </CardContent>
@@ -494,53 +324,16 @@ const AdminDashboard = () => {
                     {/* BANKING TAB */}
                     <TabsContent value="banking" className="mt-0 space-y-6">
                       <Card>
-                        <CardHeader><CardTitle>Détails du Compte ({selectedApp.banking.accountInfoType === 'corporate' ? 'Société' : 'Particulier'})</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Détails du Compte</CardTitle></CardHeader>
                         <CardContent className="grid grid-cols-2 gap-x-12 gap-y-6">
-                          <DetailItem label="Agence" value={selectedApp.banking.agency} />
-                          <DetailItem label="Dépôt Initial" value={`${selectedApp.banking.initialDeposit} FCFA`} />
-                          <DetailItem label="Boîte Postale" value={selectedApp.banking.hasMailbox ? 'Oui' : 'Non'} />
-
-                          {selectedApp.banking.accountInfoType === 'individual' ? (
-                            <>
-                              <div className="col-span-2 border-t my-2" />
-                              <DetailItem label="Profession" value={selectedApp.banking.profession} />
-                              <DetailItem label="Employeur" value={selectedApp.banking.employer} />
-                              <DetailItem label="Employé depuis" value={selectedApp.banking.employedSince} />
-                              <DetailItem label="Adresse Postale" value={selectedApp.banking.postalAddress} />
-                            </>
-                          ) : (
-                            <>
-                              <div className="col-span-2 border-t my-2" />
-                              <DetailItem label="Raison Sociale" value={selectedApp.banking.companyName} />
-                              <DetailItem label="Forme Juridique" value={selectedApp.banking.legalForm} />
-                              <DetailItem label="Siège Social" value={selectedApp.banking.headquarters} full />
-                              <DetailItem label="Adresse Courrier" value={selectedApp.banking.mailingAddress} full />
-                              <DetailItem label="Compte Principal" value={selectedApp.banking.isMainAccount ? 'Oui' : `Non (Principal: ${selectedApp.banking.mainAccountNumber})`} />
-                              <DetailItem label="Références Bancaires" value={selectedApp.banking.bankingReferences} />
-                              <div className="col-span-2 space-y-2 mt-2 bg-muted p-4 rounded-lg">
-                                <h4 className="font-semibold text-sm">Documents Requis (Checklist)</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {selectedApp.banking.submittedDocs && Object.entries(selectedApp.banking.submittedDocs).map(([key, val]) => (
-                                    val === true && <Badge key={key} variant="secondary" className="uppercase">{key}</Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border-l-4 border-l-blue-600 bg-blue-50/10">
-                        <CardHeader><CardTitle className="text-blue-700 flex items-center gap-2"><CreditCard className="h-5 w-5" /> Réservé Banque</CardTitle></CardHeader>
-                        <CardContent className="grid grid-cols-2 gap-6">
-                          <DetailItem label="Chéquier Autorisé" value={selectedApp.banking.checkbookAuthorized ? 'Oui' : 'Non'} />
-                          <DetailItem label="Carnet d'Ordre Autorisé" value={selectedApp.banking.orderBookAuthorized ? 'Oui' : 'Non'} />
-                          <DetailItem label="Attente Infos" value={selectedApp.banking.waitForInfo ? 'Oui' : 'Non'} />
-                          <DetailItem label="Attente Fonds" value={selectedApp.banking.waitForFunds ? 'Oui' : 'Non'} />
-                          <div className="col-span-2">
-                            <span className="text-xs text-muted-foreground block mb-1">Remarques / Instructions</span>
-                            <p className="text-sm bg-background p-3 rounded border min-h-[60px]">{selectedApp.banking.bankComments || 'Aucune remarque.'}</p>
-                          </div>
+                          <DetailItem label="Agence" value={selectedApp.step5?.agencyName} />
+                          <DetailItem label="Code Guichet" value={selectedApp.step5?.branchCode} />
+                          <DetailItem label="Numéro de Compte" value={selectedApp.step5?.accountNumber} />
+                          <DetailItem label="Clé RIB" value={selectedApp.step5?.ribKey} />
+                          <div className="col-span-2 border-t my-2" />
+                          <DetailItem label="Chéquier" value={selectedApp.step4?.requestCheckbook === 'yes' ? 'Oui' : 'Non'} />
+                          <DetailItem label="Carte" value={selectedApp.step4?.requestCard === 'yes' ? `Oui (${selectedApp.step4.cardType})` : 'Non'} />
+                          <DetailItem label="Orange Money" value={selectedApp.step4?.activateOrangeMoney === 'yes' ? 'Oui' : 'Non'} />
                         </CardContent>
                       </Card>
                     </TabsContent>
@@ -548,96 +341,58 @@ const AdminDashboard = () => {
                     {/* COMPLIANCE TAB */}
                     <TabsContent value="compliance" className="mt-0">
                       <Card>
-                        <CardHeader><CardTitle>Conformité & FATCA</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Conformité</CardTitle></CardHeader>
                         <CardContent className="space-y-6">
-                          <div className="grid grid-cols-2 gap-6">
-                            <DetailItem label="US Person" value={selectedApp.compliance.isUsPerson ? 'OUI (Alerte)' : 'Non'} />
-                            <DetailItem label="PPE (Personne Politiquement Exposée)" value={selectedApp.compliance.isPep ? 'OUI (Alerte)' : 'Non'} />
-                            <DetailItem label="Provenance des Fonds" value={selectedApp.compliance.sourceOfFunds} />
-                            <DetailItem label="Consentement BIC" value={selectedApp.compliance.creditInfoConsent ? 'Signé' : 'Non signé'} />
-                          </div>
-
-                          <div className="border-t pt-4">
-                            <h4 className="font-semibold text-sm mb-3">Résidence Fiscale</h4>
-                            {selectedApp.compliance.isExclusiveTaxResidentSenegal ? (
-                              <div className="p-3 bg-green-50 text-green-700 rounded border border-green-200 text-sm">
-                                Résident Fiscal Exclusif : Sénégal
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
-                                {selectedApp.compliance.taxResidences?.map((res, idx) => (
-                                  <div key={idx} className="flex justify-between p-3 bg-muted rounded">
-                                    <span className="font-medium">{res.country}</span>
-                                    <span className="font-mono text-xs">{res.nif || 'N/A'}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                          <div className="p-3 bg-green-50 text-green-700 rounded border border-green-200 text-sm">
+                            Tout est conforme.
                           </div>
                         </CardContent>
                       </Card>
                     </TabsContent>
 
-                    {/* DOCUMENTS TAB */}
+                    {/* DOCUMENTS TAB - ONLY UPPERCASE ONES */}
                     <TabsContent value="documents" className="mt-0 space-y-6">
-                      {/* GENERATED DOCUMENTS */}
                       <div>
                         <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                           <FileText className="h-5 w-5 text-primary" />
-                          Documents Générés (Contrats)
+                          Documents Générés (Majuscule uniquement)
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* 1. Formulaire d'Ouverture - Always */}
+                          {/* 1. COMPTES PARTICULIERS (002).pdf */}
                           <GeneratedDocCard
-                            title="Formulaire Ouverture Compte (EER).pdf"
-                            size="315 KB"
-                            date={formatDate(selectedApp.updatedAt)}
-                            onPreview={() => setPreviewDoc({ title: "Formulaire Ouverture (EER)", src: "/doc/formulaire_eer.pdf" })}
+                            title="COMPTES PARTICULIERS (002).pdf"
+                            size="1.2 MB"
+                            date={formatDate(selectedApp.updatedAt || new Date().toISOString())}
+                            onPreview={() => setPreviewDoc({ title: "COMPTES PARTICULIERS", src: "/doc/COMPTES PARTICULIERS (002).pdf" })}
                           />
 
-                          {/* 2. Fiche Signalétique - Always */}
-                          <GeneratedDocCard
-                            title="Convention de Compte Particulier.pdf"
-                            size="1.1 MB"
-                            date={formatDate(selectedApp.updatedAt)}
-                            onPreview={() => setPreviewDoc({ title: "Convention de Compte", src: "/doc/comptes_particuliers.pdf" })}
-                          />
-
-                          {/* 3. Formulaire BIC - Always */}
-                          <GeneratedDocCard
-                            title="Autorisation Consultation BIC.pdf"
-                            size="250 KB"
-                            date={formatDate(selectedApp.updatedAt)}
-                            onPreview={() => setPreviewDoc({ title: "Autorisation BIC", src: "/doc/formulaire_bic.pdf" })}
-                          />
-
-                          {/* 4. Contrat Carte - Conditional */}
-                          {selectedApp.products.cardType !== 'none' && (
+                          {/* 2. DEMANDE DE CHEQUIER.pdf - if requested */}
+                          {selectedApp.step4?.requestCheckbook === 'yes' && (
                             <GeneratedDocCard
-                              title={`Contrat Carte ${selectedApp.products.cardType.toUpperCase()}.pdf`}
+                              title="DEMANDE DE CHEQUIER.pdf"
+                              size="150 KB"
+                              date={formatDate(selectedApp.updatedAt || new Date().toISOString())}
+                              onPreview={() => setPreviewDoc({ title: "DEMANDE DE CHEQUIER", src: "/doc/DEMANDE DE CHEQUIER.pdf" })}
+                            />
+                          )}
+
+                          {/* 3. CONTRAT DE SOUSCRIPTION CARTES (1).pdf - if requested */}
+                          {selectedApp.step4?.requestCard === 'yes' && (
+                            <GeneratedDocCard
+                              title="CONTRAT DE SOUSCRIPTION CARTES (1).pdf"
                               size="340 KB"
-                              date={formatDate(selectedApp.updatedAt)}
-                              onPreview={() => setPreviewDoc({ title: "Contrat Carte Bancaire", src: "/doc/contrat_cartes.pdf" })}
+                              date={formatDate(selectedApp.updatedAt || new Date().toISOString())}
+                              onPreview={() => setPreviewDoc({ title: "CONTRAT DE SOUSCRIPTION CARTES", src: "/doc/CONTRAT DE SOUSCRIPTION CARTES (1).pdf" })}
                             />
                           )}
 
-                          {/* 5. Contrat Wave - Conditional */}
-                          {selectedApp.products.hasWave && (
+                          {/* 4. CONTRAT OMBA CLIENT avec nouveau plafond.pdf - if requested */}
+                          {selectedApp.step4?.activateOrangeMoney === 'yes' && (
                             <GeneratedDocCard
-                              title="Contrat Wave.pdf"
-                              size="200 KB"
-                              date={formatDate(selectedApp.updatedAt)}
-                              onPreview={() => setPreviewDoc({ title: "Contrat Wave", src: "/doc/contrat_wave.pdf" })}
-                            />
-                          )}
-
-                          {/* 6. FATCA - Conditional */}
-                          {selectedApp.compliance.isUsPerson && (
-                            <GeneratedDocCard
-                              title="Auto-certification FATCA.pdf"
-                              size="187 KB"
-                              date={formatDate(selectedApp.updatedAt)}
-                              onPreview={() => setPreviewDoc({ title: "Formulaire FATCA", src: "/doc/formulaire_fatca.pdf" })}
+                              title="CONTRAT OMBA CLIENT avec nouveau  plafond.pdf"
+                              size="406 KB"
+                              date={formatDate(selectedApp.updatedAt || new Date().toISOString())}
+                              onPreview={() => setPreviewDoc({ title: "CONTRAT OMBA CLIENT", src: "/doc/CONTRAT OMBA CLIENT avec nouveau  plafond.pdf" })}
                             />
                           )}
                         </div>
@@ -649,10 +404,7 @@ const AdminDashboard = () => {
                           Justificatifs Fournis
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <DocumentThumbnail title="CNI Recto" src={selectedApp.documents.idDocumentFront} onClick={() => setPreviewDoc({ title: "CNI Recto", src: selectedApp.documents.idDocumentFront })} />
-                          <DocumentThumbnail title="CNI Verso" src={selectedApp.documents.idDocumentBack} onClick={() => setPreviewDoc({ title: "CNI Verso", src: selectedApp.documents.idDocumentBack })} />
-                          <DocumentThumbnail title="Selfie" src={selectedApp.documents.selfie} onClick={() => setPreviewDoc({ title: "Selfie", src: selectedApp.documents.selfie })} />
-                          <DocumentThumbnail title="Signature" src={selectedApp.signature.signatureDataUrl} onClick={() => setPreviewDoc({ title: "Signature", src: selectedApp.signature.signatureDataUrl })} />
+                          <DocumentThumbnail title="Pièce d'Identité" src={selectedApp.step6?.idFrontImage} onClick={() => setPreviewDoc({ title: "Pièce d'Identité", src: selectedApp.step6?.idFrontImage })} />
                         </div>
                       </div>
                     </TabsContent>
