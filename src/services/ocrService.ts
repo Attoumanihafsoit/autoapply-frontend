@@ -29,7 +29,15 @@ export const ocrService = {
           data: {
             firstName: "Amadou",
             lastName: "Diallo",
-            idNumber: "1234567890123"
+            idNumber: "1234567890123",
+            dateOfBirth: "1990-05-15",
+            placeOfBirth: "Dakar",
+            nationality: "senegalese",
+            address: "Sicap Amitié 2, Villa 123",
+            idIssueDate: "2020-01-01",
+            idExpiryDate: "2030-01-01",
+            idIssuePlace: "Dakar",
+            idType: "cni"
           }
         });
       }, 1500); // Simulate network delay

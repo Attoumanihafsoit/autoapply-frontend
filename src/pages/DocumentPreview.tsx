@@ -104,7 +104,7 @@ const DocumentPreview = () => {
                 Dossier Validé
               </h1>
               <p className="text-muted-foreground mt-1 text-lg">
-                Félicitations {data.identity.firstName}, votre dossier est conforme.
+                Félicitations {data.step1?.firstName}, votre dossier est conforme.
               </p>
             </div>
             <div className="flex items-center gap-3">

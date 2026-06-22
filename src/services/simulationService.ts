@@ -1,4 +1,3 @@
-
 import { OnboardingData } from '@/types/onboarding';
 
 export interface SimulationResult {
@@ -27,40 +26,28 @@ export const simulationService = {
             generatedDocuments: [
                 {
                     id: 'doc_1',
-                    name: 'Ouverture de Compte Particulier',
-                    url: '/doc/comptes_particuliers.pdf',
+                    name: 'COMPTES PARTICULIERS',
+                    url: '/doc/COMPTES PARTICULIERS (002).pdf',
                     type: 'form'
                 },
-                ...(data.products.cardType !== 'none' ? [{
+                ...(data.step4?.requestCard === 'yes' ? [{
                     id: 'doc_2',
-                    name: 'Contrat Carte Bancaire',
-                    url: '/doc/contrat_cartes.pdf',
+                    name: 'CONTRAT DE SOUSCRIPTION CARTES',
+                    url: '/doc/CONTRAT DE SOUSCRIPTION CARTES (1).pdf',
                     type: 'contract' as const
                 }] : []),
-                ...(data.products.hasWave ? [{
+                ...(data.step4?.activateOrangeMoney === 'yes' ? [{
                     id: 'doc_3',
-                    name: 'Contrat Wave',
-                    url: '/doc/contrat_wave.pdf',
+                    name: 'CONTRAT OMBA CLIENT',
+                    url: '/doc/CONTRAT OMBA CLIENT avec nouveau  plafond.pdf',
                     type: 'contract' as const
                 }] : []),
-                {
+                ...(data.step4?.requestCheckbook === 'yes' ? [{
                     id: 'doc_4',
-                    name: 'Formulaire BIC (Crédit Bureau)',
-                    url: '/doc/formulaire_bic.pdf',
-                    type: 'disclosure'
-                },
-                {
-                    id: 'doc_5',
-                    name: 'Formulaire FATCA',
-                    url: '/doc/formulaire_fatca.pdf',
-                    type: 'disclosure'
-                },
-                {
-                    id: 'doc_6',
-                    name: 'Formulaire EER',
-                    url: '/doc/formulaire_eer.pdf',
-                    type: 'form'
-                }
+                    name: 'DEMANDE DE CHEQUIER',
+                    url: '/doc/DEMANDE DE CHEQUIER.pdf',
+                    type: 'form' as const
+                }] : []),
             ]
         };
     }
