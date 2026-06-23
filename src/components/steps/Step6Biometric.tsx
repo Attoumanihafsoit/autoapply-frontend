@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormMessage, FormControl } from '@/components/ui/form';
@@ -13,6 +13,17 @@ export const Step6Biometric = () => {
   const livenessPassed = watch('step6.livenessPassed');
   const faceMatchPassed = watch('step6.faceMatchPassed');
   const idFrontImage = watch('step6.idFrontImage');
+  const selfieImage = watch('step6.selfieImage');
+  
+  const selfieInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSelfieChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setValue('step6.selfieImage', imageUrl, { shouldValidate: false });
+    }
+  };
 
   const simulateDojahVerification = async (success: boolean) => {
     setIsVerifying(true);
@@ -71,13 +82,35 @@ export const Step6Biometric = () => {
         </div>
 
         {/* Liveness & Selfie */}
-        <div className="p-6 border rounded-xl bg-card flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-md transition-all">
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
-            <ScanFace size={32} />
-          </div>
+        <div 
+          className="p-6 border rounded-xl bg-card flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-primary/50"
+          onClick={() => selfieInputRef.current?.click()}
+        >
+          <input 
+            type="file" 
+            ref={selfieInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            capture="user" 
+            onChange={handleSelfieChange} 
+          />
+          
+          {selfieImage ? (
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-green-500 shadow-sm relative">
+              <img src={selfieImage} alt="Selfie" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center">
+                <CheckCircle2 className="text-green-600 drop-shadow-md opacity-80" size={24} />
+              </div>
+            </div>
+          ) : (
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
+              <ScanFace size={32} />
+            </div>
+          )}
+          
           <div>
             <h3 className="font-semibold text-lg">Selfie & Liveness</h3>
-            <p className="text-sm text-muted-foreground mt-1">Détection de vie et correspondance faciale.</p>
+            <p className="text-sm text-muted-foreground mt-1">Cliquez pour prendre un selfie.</p>
           </div>
         </div>
       </div>
@@ -95,6 +128,7 @@ export const Step6Biometric = () => {
         ) : (
           <div className="flex flex-col sm:flex-row gap-4">
             <Button 
+              type="button"
               size="lg" 
               onClick={() => simulateDojahVerification(true)}
               disabled={isVerifying}
@@ -104,6 +138,7 @@ export const Step6Biometric = () => {
               Lancer SDK Dojah (Succès)
             </Button>
             <Button 
+              type="button"
               variant="destructive" 
               size="lg" 
               onClick={() => simulateDojahVerification(false)}

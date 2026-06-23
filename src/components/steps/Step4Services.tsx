@@ -10,6 +10,7 @@ export const Step4Services = () => {
   const openIndividualAccount = watch('step4.openIndividualAccount');
   const requestCheckbook = watch('step4.requestCheckbook');
   const activateOrangeMoney = watch('step4.activateOrangeMoney');
+  const cardType = watch('step4.cardType');
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -176,23 +177,32 @@ export const Step4Services = () => {
                       defaultValue={field.value}
                       className="grid grid-cols-1 md:grid-cols-3 gap-4"
                     >
-                      <FormItem className="flex flex-col items-center justify-center space-y-2 p-4 border rounded-xl cursor-pointer hover:bg-primary/5 hover:border-primary transition-all has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5">
+                      <FormItem 
+                        onClick={() => field.onChange('azur')}
+                        className={`flex flex-col items-center justify-center space-y-2 p-4 border rounded-xl cursor-pointer hover:bg-primary/5 hover:border-primary transition-all ${cardType === 'azur' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : ''}`}
+                      >
                         <FormControl><RadioGroupItem value="azur" className="sr-only" /></FormControl>
                         <div className="h-12 w-20 bg-blue-500 rounded-md shadow-sm mb-2" />
-                        <FormLabel className="font-semibold cursor-pointer">Azur</FormLabel>
-                        <p className="text-xs text-center text-muted-foreground">Plafond : 500k FCFA/mois</p>
+                        <FormLabel className="font-semibold cursor-pointer pointer-events-none">Azur</FormLabel>
+                        <p className="text-xs text-center text-muted-foreground pointer-events-none">Plafond : 500k FCFA/mois</p>
                       </FormItem>
-                      <FormItem className="flex flex-col items-center justify-center space-y-2 p-4 border rounded-xl cursor-pointer hover:bg-primary/5 hover:border-primary transition-all has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5">
+                      <FormItem 
+                        onClick={() => field.onChange('elite')}
+                        className={`flex flex-col items-center justify-center space-y-2 p-4 border rounded-xl cursor-pointer hover:bg-primary/5 hover:border-primary transition-all ${cardType === 'elite' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : ''}`}
+                      >
                         <FormControl><RadioGroupItem value="elite" className="sr-only" /></FormControl>
                         <div className="h-12 w-20 bg-slate-800 rounded-md shadow-sm mb-2" />
-                        <FormLabel className="font-semibold cursor-pointer">Elite</FormLabel>
-                        <p className="text-xs text-center text-muted-foreground">Plafond : 2M FCFA/mois</p>
+                        <FormLabel className="font-semibold cursor-pointer pointer-events-none">Elite</FormLabel>
+                        <p className="text-xs text-center text-muted-foreground pointer-events-none">Plafond : 2M FCFA/mois</p>
                       </FormItem>
-                      <FormItem className="flex flex-col items-center justify-center space-y-2 p-4 border rounded-xl cursor-pointer hover:bg-primary/5 hover:border-primary transition-all has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5">
+                      <FormItem 
+                        onClick={() => field.onChange('platine')}
+                        className={`flex flex-col items-center justify-center space-y-2 p-4 border rounded-xl cursor-pointer hover:bg-primary/5 hover:border-primary transition-all ${cardType === 'platine' ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : ''}`}
+                      >
                         <FormControl><RadioGroupItem value="platine" className="sr-only" /></FormControl>
                         <div className="h-12 w-20 bg-gradient-to-r from-gray-300 to-gray-400 rounded-md shadow-sm mb-2" />
-                        <FormLabel className="font-semibold cursor-pointer">Platine</FormLabel>
-                        <p className="text-xs text-center text-muted-foreground">Plafond : 10M FCFA/mois</p>
+                        <FormLabel className="font-semibold cursor-pointer pointer-events-none">Platine</FormLabel>
+                        <p className="text-xs text-center text-muted-foreground pointer-events-none">Plafond : 10M FCFA/mois</p>
                       </FormItem>
                     </RadioGroup>
                   </FormControl>

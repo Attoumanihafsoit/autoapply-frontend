@@ -40,7 +40,7 @@ export const ocrService = {
             idType: "cni"
           }
         });
-      }, 1500); // Simulate network delay
+      }, 1500);
     });
   }
 };

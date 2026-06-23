@@ -85,6 +85,7 @@ export const step5Schema = z.object({
 
 export const step6Schema = z.object({
   idFrontImage: z.string().optional(),
+  selfieImage: z.string().optional(),
   livenessPassed: z.boolean().refine(val => val === true, { message: 'Vérification liveness échouée. Veuillez réessayer.' }),
   faceMatchPassed: z.boolean().refine(val => val === true, { message: 'Correspondance visage non confirmée. Réessayez.' }),
 });

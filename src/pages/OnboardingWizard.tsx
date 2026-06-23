@@ -83,6 +83,12 @@ const OnboardingWizard = () => {
   };
 
   const onSubmit = async (data: OnboardingFormValues) => {
+    // Prevent accidental submit (e.g. hitting Enter) on earlier steps
+    if (currentStep < stepsMeta.length - 1) {
+      handleNext();
+      return;
+    }
+
     setIsSubmitting(true);
     // Submit data to backend simulation
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -120,7 +126,7 @@ const OnboardingWizard = () => {
 
       <main className="container py-8 max-w-6xl">
         <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col lg:flex-row gap-8">
             
             {/* Left Sidebar - Progress Stepper */}
             <aside className="lg:w-72 shrink-0">
@@ -173,8 +179,9 @@ const OnboardingWizard = () => {
                     </Button>
                   ) : (
                     <Button 
-                      type="submit" 
+                      type="button" 
                       disabled={isSubmitting}
+                      onClick={methods.handleSubmit(onSubmit)}
                       className="gap-2 rounded-full px-8 bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all"
                     >
                       {isSubmitting ? 'Envoi...' : 'Soumettre le dossier'}
@@ -186,7 +193,7 @@ const OnboardingWizard = () => {
               </div>
             </div>
             
-          </form>
+          </div>
         </FormProvider>
       </main>
     </div>
