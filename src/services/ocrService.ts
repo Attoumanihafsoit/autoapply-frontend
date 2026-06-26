@@ -4,7 +4,7 @@ export interface OcrResult {
   data: Record<string, string>;
 }
 
-const API_BASE_URL = 'http://localhost:8080/api/onboarding'; // Adjust based on backend port
+const API_BASE_URL = 'http://localhost:8080/api/onboarding';
 
 export const ocrService = {
   uploadDocument: async (applicationId: string, file: File, type: 'ID_FRONT' | 'ID_BACK'): Promise<OcrResult> => {
