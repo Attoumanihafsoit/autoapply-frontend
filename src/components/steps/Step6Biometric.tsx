@@ -82,7 +82,7 @@ export const Step6Biometric = () => {
     };
   }, []);
 
-  const simulateDojahVerification = async (success: boolean) => {
+  const simulateBiometricVerification = async (success: boolean) => {
     setIsVerifying(true);
     await new Promise(resolve => setTimeout(resolve, 2500));
     
@@ -110,7 +110,7 @@ export const Step6Biometric = () => {
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-primary">Vérification biométrique</h2>
         <p className="text-muted-foreground mt-1">
-          Dernière étape ! Nous devons vérifier votre identité via l'intégration sécurisée Dojah.
+          Dernière étape ! Nous devons vérifier votre identité de manière sécurisée.
         </p>
       </div>
 
@@ -186,18 +186,18 @@ export const Step6Biometric = () => {
             <Button 
               type="button"
               size="lg" 
-              onClick={() => simulateDojahVerification(true)}
+              onClick={() => simulateBiometricVerification(true)}
               disabled={isVerifying || !idFrontImage || !selfieImage}
               className="w-full sm:w-auto"
             >
               {isVerifying ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ScanFace className="mr-2 h-5 w-5" />}
-              Lancer SDK Dojah (Succès)
+              Lancer la vérification (Succès)
             </Button>
             <Button 
               type="button"
               variant="destructive" 
               size="lg" 
-              onClick={() => simulateDojahVerification(false)}
+              onClick={() => simulateBiometricVerification(false)}
               disabled={isVerifying || !idFrontImage || !selfieImage}
               className="w-full sm:w-auto"
             >
