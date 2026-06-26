@@ -1,33 +1,89 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { FormField, FormItem, FormMessage, FormControl } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { type OnboardingFormValues } from '@/lib/validations/onboarding';
-import { CheckCircle2, XCircle, ScanFace, FileBox, Loader2 } from 'lucide-react';
+import { CheckCircle2, ScanFace, FileBox, Loader2, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const Step6Biometric = () => {
   const { control, setValue, watch } = useFormContext<OnboardingFormValues>();
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   
   const livenessPassed = watch('step6.livenessPassed');
   const faceMatchPassed = watch('step6.faceMatchPassed');
   const idFrontImage = watch('step6.idFrontImage');
   const selfieImage = watch('step6.selfieImage');
   
-  const selfieInputRef = useRef<HTMLInputElement>(null);
+  const idInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const handleSelfieChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle ID Card Upload
+  const handleIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      setValue('step6.selfieImage', imageUrl, { shouldValidate: false });
+      setValue('step6.idFrontImage', imageUrl, { shouldValidate: false });
     }
   };
 
+  // Start Camera
+  const startCamera = async () => {
+    setIsCameraOpen(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' } 
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      streamRef.current = stream;
+    } catch (err) {
+      console.error("Camera access denied or unavailable", err);
+      toast.error("Impossible d'accéder à la caméra.");
+      setIsCameraOpen(false);
+    }
+  };
+
+  // Stop Camera
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsCameraOpen(false);
+  };
+
+  // Capture Photo
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageUrl = canvas.toDataURL('image/jpeg');
+        setValue('step6.selfieImage', imageUrl, { shouldValidate: false });
+        stopCamera();
+      }
+    }
+  };
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
   const simulateDojahVerification = async (success: boolean) => {
     setIsVerifying(true);
-    // Simulate SDK delay
     await new Promise(resolve => setTimeout(resolve, 2500));
     
     if (success) {
@@ -35,7 +91,6 @@ export const Step6Biometric = () => {
       setValue('step6.faceMatchPassed', true, { shouldValidate: true });
       toast.success("Vérification biométrique réussie ! (Liveness: 92%, Face Match: 88%)");
       
-      // Auto-fill some step 2 info if they were empty (mock OCR)
       setValue('step2.idNumber', 'SN123456789', { shouldValidate: false });
       setValue('step2.idIssueDate', '2022-01-01', { shouldValidate: false });
       setValue('step2.idExpiryDate', '2032-01-01', { shouldValidate: false });
@@ -62,7 +117,17 @@ export const Step6Biometric = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* ID Document Capture */}
-        <div className="p-6 border rounded-xl bg-card flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-md transition-all">
+        <div 
+          className="p-6 border rounded-xl bg-card flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-primary/50"
+          onClick={() => idInputRef.current?.click()}
+        >
+          <input 
+            type="file" 
+            ref={idInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            onChange={handleIdChange} 
+          />
           {idFrontImage ? (
             <div className="w-24 h-16 rounded-md overflow-hidden border border-primary/20 shadow-sm relative">
               <img src={idFrontImage} alt="ID Front" className="w-full h-full object-cover" />
@@ -77,24 +142,15 @@ export const Step6Biometric = () => {
           )}
           <div>
             <h3 className="font-semibold text-lg">Pièce d'Identité</h3>
-            <p className="text-sm text-muted-foreground mt-1">Capturez le recto et verso de votre pièce.</p>
+            <p className="text-sm text-muted-foreground mt-1">Cliquez pour importer le recto de votre CNI.</p>
           </div>
         </div>
 
-        {/* Liveness & Selfie */}
+        {/* Liveness & Selfie (Camera Modal) */}
         <div 
           className="p-6 border rounded-xl bg-card flex flex-col items-center text-center space-y-4 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-primary/50"
-          onClick={() => selfieInputRef.current?.click()}
+          onClick={startCamera}
         >
-          <input 
-            type="file" 
-            ref={selfieInputRef} 
-            className="hidden" 
-            accept="image/*" 
-            capture="user" 
-            onChange={handleSelfieChange} 
-          />
-          
           {selfieImage ? (
             <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-green-500 shadow-sm relative">
               <img src={selfieImage} alt="Selfie" className="w-full h-full object-cover" />
@@ -110,7 +166,7 @@ export const Step6Biometric = () => {
           
           <div>
             <h3 className="font-semibold text-lg">Selfie & Liveness</h3>
-            <p className="text-sm text-muted-foreground mt-1">Cliquez pour prendre un selfie.</p>
+            <p className="text-sm text-muted-foreground mt-1">Cliquez pour prendre une photo (caméra).</p>
           </div>
         </div>
       </div>
@@ -131,7 +187,7 @@ export const Step6Biometric = () => {
               type="button"
               size="lg" 
               onClick={() => simulateDojahVerification(true)}
-              disabled={isVerifying}
+              disabled={isVerifying || !idFrontImage || !selfieImage}
               className="w-full sm:w-auto"
             >
               {isVerifying ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ScanFace className="mr-2 h-5 w-5" />}
@@ -142,7 +198,7 @@ export const Step6Biometric = () => {
               variant="destructive" 
               size="lg" 
               onClick={() => simulateDojahVerification(false)}
-              disabled={isVerifying}
+              disabled={isVerifying || !idFrontImage || !selfieImage}
               className="w-full sm:w-auto"
             >
               Simuler Échec
@@ -177,6 +233,39 @@ export const Step6Biometric = () => {
         />
 
       </div>
+
+      {/* Camera Modal */}
+      <Dialog open={isCameraOpen} onOpenChange={(open) => !open && stopCamera()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Prendre un Selfie</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden border">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted 
+                className="w-full h-full object-cover transform scale-x-[-1]"
+              />
+              <canvas ref={canvasRef} className="hidden" />
+              
+              {/* Overlay Face Guide */}
+              <div className="absolute inset-0 border-4 border-dashed border-white/50 rounded-full m-8 pointer-events-none" />
+            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              Placez votre visage dans l'ovale et cliquez sur capturer.
+            </p>
+          </div>
+          <DialogFooter className="sm:justify-center">
+            <Button type="button" size="lg" onClick={capturePhoto} className="gap-2 rounded-full px-8">
+              <Camera className="h-5 w-5" />
+              Capturer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
