@@ -1,5 +1,6 @@
 import * as z from 'zod';
 
+
 export const step1Schema = z.object({
   civility: z.enum(['M.', 'Mme', 'Mlle'], { required_error: 'La civilité est requise' }),
   lastName: z.string().min(1, 'Le nom de famille est requis').toUpperCase(),
@@ -83,12 +84,25 @@ export const step5Schema = z.object({
   bankReferences: z.string().optional(),
 });
 
+// export const step6Schema = z.object({
+//   idFrontImage: z.string().optional(),
+//   selfieImage: z.string().optional(),
+//   livenessPassed: z.boolean().refine(val => val === true, { message: 'Vérification liveness échouée. Veuillez réessayer.' }),
+//   faceMatchPassed: z.boolean().refine(val => val === true, { message: 'Correspondance visage non confirmée. Réessayez.' }),
+// });
 export const step6Schema = z.object({
-  idFrontImage: z.string().optional(),
-  selfieImage: z.string().optional(),
-  livenessPassed: z.boolean().refine(val => val === true, { message: 'Vérification liveness échouée. Veuillez réessayer.' }),
-  faceMatchPassed: z.boolean().refine(val => val === true, { message: 'Correspondance visage non confirmée. Réessayez.' }),
+  idFrontImage: z.instanceof(File).optional(),
+  selfieImage: z.instanceof(File).optional(),
+
+  livenessPassed: z.boolean().refine(val => val === true, {
+    message: 'Vérification liveness échouée. Veuillez réessayer.'
+  }),
+
+  faceMatchPassed: z.boolean().refine(val => val === true, {
+    message: 'Correspondance visage non confirmée. Réessayez.'
+  }),
 });
+
 
 export const onboardingSchema = z.object({
   step1: step1Schema,

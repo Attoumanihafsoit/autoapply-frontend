@@ -61,19 +61,20 @@ const OnboardingWizard = () => {
   }, [methods.watch]);
 
   const handleNext = async () => {
-    const currentFields = stepsMeta[currentStep].schemaFields;
-    // Trigger validation for the specific step fields
-    const isStepValid = await trigger(currentFields);
-    
-    if (isStepValid) {
-      if (currentStep < stepsMeta.length - 1) {
-        setCurrentStep((prev) => prev + 1);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    } else {
-      toast.error('Veuillez corriger les erreurs avant de continuer.');
-    }
-  };
+  const currentFields = stepsMeta[currentStep].schemaFields;
+
+  const isStepValid = await trigger(currentFields);
+
+  console.log("STEP =", currentStep);
+  console.log("VALID =", isStepValid);
+  console.log("ERREURS =", methods.formState.errors);
+
+  if (isStepValid) {
+    setCurrentStep((prev) => prev + 1);
+  } else {
+    toast.error("Veuillez corriger les erreurs.");
+  }
+};
 
   const handlePrev = () => {
     if (currentStep > 0) {
@@ -82,43 +83,119 @@ const OnboardingWizard = () => {
     }
   };
 
+  // const onSubmit = async (data: OnboardingFormValues) => {
+  //   // Prevent accidental submit (e.g. hitting Enter) on earlier steps
+  //   if (currentStep < stepsMeta.length - 1) {
+  //     handleNext();
+  //     return;
+  //   }
+
+  //   setIsSubmitting(true);
+  //   // Submit data to backend simulation
+  //   await new Promise((resolve) => setTimeout(resolve, 2000));
+    
+  //   // Save to local storage for DocumentPreview to pick it up
+  //   const finalData = { ...data, id: crypto.randomUUID() };
+  //   const applications = JSON.parse(localStorage.getItem('autoapply_applications') || '[]');
+  //   applications.push(finalData);
+  //   localStorage.setItem('autoapply_applications', JSON.stringify(applications));
+    
+  //   console.log("FINAL ONBOARDING DATA", finalData);
+  //   toast.success('Dossier soumis avec succès !');
+    
+  //   localStorage.removeItem(STORAGE_KEY);
+  //   setIsSubmitting(false);
+  //   navigate(`/onboarding/documents/${finalData.id}`);
+  // };
   const onSubmit = async (data: OnboardingFormValues) => {
-    // Prevent accidental submit (e.g. hitting Enter) on earlier steps
-    if (currentStep < stepsMeta.length - 1) {
-      handleNext();
-      return;
-    }
+  if (currentStep < stepsMeta.length - 1) {
+    handleNext();
+    return;
+  }
 
+  try {
     setIsSubmitting(true);
-    // Submit data to backend simulation
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    // Save to local storage for DocumentPreview to pick it up
-    const finalData = { ...data, id: crypto.randomUUID() };
-    const applications = JSON.parse(localStorage.getItem('autoapply_applications') || '[]');
-    applications.push(finalData);
-    localStorage.setItem('autoapply_applications', JSON.stringify(applications));
-    
-    console.log("FINAL ONBOARDING DATA", finalData);
-    toast.success('Dossier soumis avec succès !');
-    
-    localStorage.removeItem(STORAGE_KEY);
-    setIsSubmitting(false);
-    navigate(`/onboarding/documents/${finalData.id}`);
-  };
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 0: return <Step1Civil />;
-      case 1: return <Step2IdentityDoc />;
-      case 2: return <Step3Profession />;
-      case 3: return <Step4Services />;
-      case 4: return <Step5Banking />;
-      case 5: return <Step6Biometric />;
-      case 6: return <Step7Review />;
-      default: return null;
+    const formData = new FormData();
+
+    // Informations client
+    formData.append("tenant_id", "BIMAO-001");
+    formData.append("nom", data.step1.lastName);
+    formData.append("prenom", data.step1.firstName);
+    formData.append("email", data.step1.email);
+
+    // Fichier CNI
+    if (data.step6.idFrontImage) {
+      formData.append(
+        "id_front_image",
+        data.step6.idFrontImage
+      );
     }
-  };
+
+    // Fichier selfie
+    if (data.step6.selfieImage) {
+      formData.append(
+        "selfie_image",
+        data.step6.selfieImage
+      );
+    }
+
+
+    const response = await fetch(
+      "http://localhost:3000/api/v1/customer/register",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+
+    const result = await response.json();
+
+
+    if (!response.ok) {
+      throw new Error(result.error || "Erreur serveur");
+    }
+
+
+    console.log("BACKEND RESPONSE :", result);
+
+
+    toast.success("Dossier soumis avec succès !");
+
+    localStorage.removeItem(STORAGE_KEY);
+
+    navigate(`/onboarding/documents/${result.id || crypto.randomUUID()}`);
+
+
+  } catch (error) {
+
+    console.error("SUBMIT ERROR :", error);
+
+    toast.error(
+      error instanceof Error
+        ? error.message
+        : "Une erreur est survenue"
+    );
+
+  } finally {
+
+    setIsSubmitting(false);
+
+  }
+};
+  const renderStep = () => {
+  switch (currentStep) {
+    case 0: return <Step1Civil />;
+    case 1: return <Step2IdentityDoc />;
+    case 2: return <Step3Profession />;
+    case 3: return <Step4Services />;
+    case 4: return <Step5Banking />;
+    case 5: return <Step6Biometric />;
+    case 6: return <Step7Review />;
+    default: return null;
+  }
+};
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-background">

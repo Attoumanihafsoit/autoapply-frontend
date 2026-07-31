@@ -15,8 +15,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Textarea } from '@/components/ui/textarea';
 
 export const Step1Civil = () => {
-  const { control, setValue } = useFormContext<OnboardingFormValues>();
+ 
   const { language } = useLanguage();
+  const { control, setValue, getValues } = useFormContext<OnboardingFormValues>();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -32,52 +33,208 @@ export const Step1Civil = () => {
     }
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+//   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = event.target.files?.[0];
+//     if (!file) return;
 
-    setIsScanning(true);
-    try {
-      // Store the image locally for Step 6 immediately
-      const imageUrl = URL.createObjectURL(file);
-      setValue('step6.idFrontImage', imageUrl, { shouldValidate: false });
+//     setIsScanning(true);
+//     try {
+//       // Call OCR service
+// setValue('step6.idFrontImage', file, { 
+//   shouldValidate: false 
+// });
 
-      // Call OCR service
-      const result = await ocrService.uploadDocument('temp-id', file, 'ID_FRONT');
+// // const formValues = getValues();
 
-      if (result.data) {
-        // Auto-fill Step 1 fields
-        if (result.data.firstName) setValue('step1.firstName', result.data.firstName, { shouldValidate: true });
-        if (result.data.lastName) setValue('step1.lastName', result.data.lastName, { shouldValidate: true });
-        if (result.data.dateOfBirth) setValue('step1.dateOfBirth', result.data.dateOfBirth, { shouldValidate: true });
-        if (result.data.placeOfBirth) setValue('step1.placeOfBirth', result.data.placeOfBirth, { shouldValidate: true });
-        if (result.data.nationality) setValue('step1.nationality', result.data.nationality, { shouldValidate: true });
-        if (result.data.address) setValue('step1.address', result.data.address, { shouldValidate: true });
+// // console.log("STEP6 COMPLET :", formValues.step6);
 
-        // Auto-fill Step 2 fields
-        if (result.data.idNumber) setValue('step2.idNumber', result.data.idNumber, { shouldValidate: true });
-        if (result.data.idIssueDate) setValue('step2.idIssueDate', result.data.idIssueDate, { shouldValidate: true });
-        if (result.data.idExpiryDate) setValue('step2.idExpiryDate', result.data.idExpiryDate, { shouldValidate: true });
-        if (result.data.idIssuePlace) setValue('step2.idIssuePlace', result.data.idIssuePlace, { shouldValidate: true });
-        if (result.data.idType) setValue('step2.idType', result.data.idType as any, { shouldValidate: true });
+// // const selfieImage = formValues.step6?.selfieImage;
 
-        toast.success("Informations extraites à 100% avec succès !");
-      }
-    } catch (error) {
-      toast.error("Erreur lors de l'analyse du document");
-      console.error(error);
-    } finally {
-      setIsScanning(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      if (cameraInputRef.current) cameraInputRef.current.value = '';
+// // console.log("SELFIE AVANT ENVOI :", selfieImage);
+
+
+// // const result = await ocrService.uploadDocument(
+// //   'temp-id',
+// //   file,
+// //   selfieImage,
+// //   formValues.step1
+// // );
+// const formValues = getValues();
+// const idFile = formValues.step6?.idFrontImage;
+// const selfieFile = formValues.step6?.selfieImage;
+
+// if (!idFile || !selfieFile) {
+//   console.error(" Il manque un fichier : ID ou Selfie");
+//   toast.error("Veuillez importer la pièce d'identité ET le selfie");
+//   return;
+// }
+
+// const result = await ocrService.uploadDocument(
+//   'temp-id',
+//   idFile,
+//   selfieFile,
+//   formValues.step1
+// );
+
+//       if (result.data) {
+//         // Auto-fill Step 1 fields
+//         if (result.data.firstName) setValue('step1.firstName', result.data.firstName, { shouldValidate: true });
+//         if (result.data.lastName) setValue('step1.lastName', result.data.lastName, { shouldValidate: true });
+//         if (result.data.dateOfBirth) setValue('step1.dateOfBirth', result.data.dateOfBirth, { shouldValidate: true });
+//         if (result.data.placeOfBirth) setValue('step1.placeOfBirth', result.data.placeOfBirth, { shouldValidate: true });
+//         if (result.data.nationality) setValue('step1.nationality', result.data.nationality, { shouldValidate: true });
+//         if (result.data.address) setValue('step1.address', result.data.address, { shouldValidate: true });
+
+//         // Auto-fill Step 2 fields
+//         if (result.data.idNumber) setValue('step2.idNumber', result.data.idNumber, { shouldValidate: true });
+//         if (result.data.idIssueDate) setValue('step2.idIssueDate', result.data.idIssueDate, { shouldValidate: true });
+//         if (result.data.idExpiryDate) setValue('step2.idExpiryDate', result.data.idExpiryDate, { shouldValidate: true });
+//         if (result.data.idIssuePlace) setValue('step2.idIssuePlace', result.data.idIssuePlace, { shouldValidate: true });
+//         if (result.data.idType) setValue('step2.idType', result.data.idType as any, { shouldValidate: true });
+
+//         toast.success("Informations extraites à 100% avec succès !");
+//       }
+//     } catch (error) {
+//       toast.error("Erreur lors de l'analyse du document");
+//       console.error(error);
+//     } finally {
+//       setIsScanning(false);
+//       if (fileInputRef.current) fileInputRef.current.value = '';
+//       if (cameraInputRef.current) cameraInputRef.current.value = '';
+//     }
+//   };
+
+const handleFileChange = async (
+  event: React.ChangeEvent<HTMLInputElement>,
+  type: "id" | "selfie"
+) => {
+
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+
+  // enregistrer le bon fichier
+  if (type === "id") {
+
+    setValue(
+      'step6.idFrontImage',
+      file,
+      { shouldValidate:false }
+    );
+
+    console.log("ID FRONT IMAGE :", file);
+
+  }
+
+
+  if (type === "selfie") {
+
+    setValue(
+      'step6.selfieImage',
+      file,
+      { shouldValidate:false }
+    );
+
+    console.log("SELFIE IMAGE :", file);
+
+  }
+
+
+
+  const formValues = getValues();
+
+
+  const idFile =
+    type === "id"
+      ? file
+      : formValues.step6?.idFrontImage;
+
+
+  const selfieFile =
+    type === "selfie"
+      ? file
+      : formValues.step6?.selfieImage;
+
+
+
+  // on attend les deux fichiers
+  if (!idFile || !selfieFile) {
+
+    console.log("Attente du deuxième fichier");
+
+    return;
+
+  }
+
+
+
+  setIsScanning(true);
+
+
+  try {
+
+    const result = await ocrService.uploadDocument(
+      'temp-id',
+      idFile,
+      selfieFile,
+      formValues.step1
+    );
+
+
+    console.log("REPONSE BACKEND :", result);
+
+
+    if (result.data) {
+
+      if (result.data.firstName)
+        setValue(
+          'step1.firstName',
+          result.data.firstName,
+          {shouldValidate:true}
+        );
+
+
+      if (result.data.lastName)
+        setValue(
+          'step1.lastName',
+          result.data.lastName,
+          {shouldValidate:true}
+        );
+
+
+      toast.success(
+        "Informations extraites avec succès !"
+      );
+
     }
-  };
+
+
+  } catch(error){
+
+    console.error(error);
+
+    toast.error(
+      "Erreur lors de l'analyse du document"
+    );
+
+
+  } finally {
+
+    setIsScanning(false);
+
+  }
+
+};
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
-      {/* Hidden Inputs */}
-      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-      <input type="file" ref={cameraInputRef} className="hidden" accept="image/*" capture="environment" onChange={handleFileChange} />
+<input
+ type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e)=>handleFileChange(e,"id")}
+/>
+<input
+ type="file" ref={cameraInputRef} className="hidden" accept="image/*" capture="user" onChange={(e)=>handleFileChange(e,"selfie")}
+/>
 
       {/* Scan Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -114,7 +271,12 @@ export const Step1Civil = () => {
           disabled={isScanning}
           className="gap-2 shrink-0 bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
         >
-          {isScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <QrCode className="h-5 w-5" />}
+         <QrCode className={`h-5 w-5 ${isScanning ? 'hidden' : ''}`} />
+
+<Loader2 
+  className={`h-5 w-5 animate-spin ${isScanning ? '' : 'hidden'}`} 
+/>
+
           {isScanning ? 'Analyse en cours...' : 'Scanner pour Auto-remplir'}
         </Button>
       </div>

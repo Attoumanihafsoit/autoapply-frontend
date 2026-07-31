@@ -24,12 +24,14 @@ export const Step6Biometric = () => {
 
   // Handle ID Card Upload
   const handleIdChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setValue('step6.idFrontImage', imageUrl, { shouldValidate: false });
-    }
-  };
+  const file = event.target.files?.[0];
+
+  if (file) {
+    setValue('step6.idFrontImage', file, {
+      shouldValidate: false
+    });
+  }
+};
 
   // Start Camera
   const startCamera = async () => {
@@ -60,20 +62,36 @@ export const Step6Biometric = () => {
 
   // Capture Photo
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageUrl = canvas.toDataURL('image/jpeg');
-        setValue('step6.selfieImage', imageUrl, { shouldValidate: false });
-        stopCamera();
-      }
+  if (videoRef.current && canvasRef.current) {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File(
+            [blob],
+            "selfie.jpg",
+            { type: "image/jpeg" }
+          );
+
+          setValue('step6.selfieImage', file, {
+            shouldValidate: false
+          });
+        }
+      }, "image/jpeg");
+
+      stopCamera();
     }
-  };
+  }
+};
 
   // Cleanup camera on unmount
   useEffect(() => {
@@ -128,14 +146,20 @@ export const Step6Biometric = () => {
             accept="image/*" 
             onChange={handleIdChange} 
           />
-          {idFrontImage ? (
-            <div className="w-24 h-16 rounded-md overflow-hidden border border-primary/20 shadow-sm relative">
-              <img src={idFrontImage} alt="ID Front" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center">
-                <CheckCircle2 className="text-green-600 drop-shadow-md" size={24} />
-              </div>
-            </div>
-          ) : (
+          {/* image */}
+          { idFrontImage instanceof File ? (
+  <div className="w-24 h-16 rounded-md overflow-hidden border border-primary/20 shadow-sm relative">
+    <img
+      src={URL.createObjectURL(idFrontImage)}
+      alt="ID Front"
+      className="w-full h-full object-cover"
+    />
+
+    <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center">
+      <CheckCircle2 className="text-green-600 drop-shadow-md" size={24} />
+    </div>
+  </div>
+) : (
             <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center">
               <FileBox size={32} />
             </div>
@@ -153,7 +177,16 @@ export const Step6Biometric = () => {
         >
           {selfieImage ? (
             <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-green-500 shadow-sm relative">
-              <img src={selfieImage} alt="Selfie" className="w-full h-full object-cover" />
+              {/* <img src={selfieImage} alt="Selfie" className="w-full h-full object-cover" /> */}
+   
+{selfieImage instanceof File && (
+  <img
+    src={URL.createObjectURL(selfieImage)}
+    alt="Selfie"
+    className="w-full h-full object-cover"
+  />
+)}
+                
               <div className="absolute inset-0 bg-green-500/10 flex items-center justify-center">
                 <CheckCircle2 className="text-green-600 drop-shadow-md opacity-80" size={24} />
               </div>

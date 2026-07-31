@@ -151,6 +151,43 @@ export const translations: Translations = {
   'common.details': { fr: 'Détails', en: 'Details' },
   'common.back': { fr: 'Retour', en: 'Back' },
   'common.clear': { fr: 'Effacer', en: 'Clear' },
+
+// modifier 
+    // Wizard steps labels
+  'Civil & Contact': {
+    fr: 'Civil & Contact',
+    en: 'Civil & Contact'
+  },
+
+  'Pièce d\'identité': {
+    fr: 'Pièce d\'identité',
+    en: 'Identity document'
+  },
+
+  'Profession': {
+    fr: 'Profession',
+    en: 'Occupation'
+  },
+
+  'Services': {
+    fr: 'Services',
+    en: 'Services'
+  },
+
+  'Banque': {
+    fr: 'Banque',
+    en: 'Bank'
+  },
+
+  'Biométrie': {
+    fr: 'Biométrie',
+    en: 'Biometrics'
+  },
+
+  'Récapitulatif': {
+    fr: 'Récapitulatif',
+    en: 'Summary'
+  },
 };
 
 interface LanguageContextType {
