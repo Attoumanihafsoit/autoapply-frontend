@@ -25,6 +25,10 @@ export const ocrService = {
   address?: string;
   postalAddress?: string;
   selfieFile?: File;
+  ouverture_compte?: boolean;
+   demande_chequier?: boolean;
+    demande_carte?: boolean;
+     activation_omba?: boolean;
 }
   ): Promise<OcrResult> => {
 
@@ -33,14 +37,16 @@ export const ocrService = {
     formData.append('tenant_id', 'BIMAO-001');
     formData.append('civilite', clientData.civility ?? '');
    formData.append('nom', clientData.lastName ?? '');
-formData.append('prenom', clientData.firstName ?? '');
-formData.append('date_naissance', clientData.dateOfBirth ?? '');
+    formData.append('prenom', clientData.firstName ?? '');
+    formData.append('date_naissance', clientData.dateOfBirth ?? '');
 formData.append('lieu_naissance', clientData.placeOfBirth ?? '');
 formData.append('nationalite', clientData.nationality ?? '');
 formData.append('telephone', clientData.phone ?? '');
 formData.append('email', clientData.email ?? '');
 formData.append('adresse', clientData.address ?? '');
 formData.append('adresse_postale', clientData.postalAddress ?? '');
+
+
 
  // Document identité (CNI ou passeport)
 formData.append(
@@ -55,6 +61,27 @@ if (selfieImage) {
     selfieImage
   );
 }
+
+// DONNES FICHIER 
+formData.append(
+  'ouverture_compte',
+  String(clientData.ouverture_compte ?? false)
+);
+
+formData.append(
+  'demande_chequier',
+  String(clientData.demande_chequier ?? false)
+);
+
+formData.append(
+  'demande_carte',
+  String(clientData.demande_carte ?? false)
+);
+
+formData.append(
+  'activation_omba',
+  String(clientData.activation_omba ?? false)
+);
 
     // DEBUG
     console.log("CLIENT DATA :", clientData);
