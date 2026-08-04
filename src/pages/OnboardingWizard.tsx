@@ -16,6 +16,7 @@ import { Step7Review } from '@/components/steps/Step7Review';
 import { onboardingSchema, type OnboardingFormValues } from '@/lib/validations/onboarding';
 import { toast } from 'sonner';
 
+
 const STORAGE_KEY = 'autoapply_onboarding_new';
 
 const stepsMeta = [
@@ -24,7 +25,8 @@ const stepsMeta = [
   { key: 'step3', labelKey: 'Profession', schemaFields: ['step3'] as const },
   { key: 'step4', labelKey: 'Services', schemaFields: ['step4'] as const },
   { key: 'step5', labelKey: 'Banque', schemaFields: ['step5'] as const },
-  { key: 'step6', labelKey: 'Biométrie', schemaFields: ['step6'] as const },
+  // pour le test
+  // { key: 'step6', labelKey: 'Biométrie', schemaFields: ['step6'] as const },
   { key: 'step7', labelKey: 'Récapitulatif', schemaFields: [] as const },
 ];
 
@@ -32,6 +34,20 @@ const OnboardingWizard = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // feshe 
+const API_URL = import.meta.env.VITE_API_URL;
+
+useEffect(() => {
+  fetch(`${API_URL}/health`)
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("Réponse de l'API :", data);
+    })
+    .catch((error) => {
+      console.error("Erreur API :", error);
+    });
+}, []);
 
   // Parse cached data safely
   const cachedData = localStorage.getItem(STORAGE_KEY);
@@ -140,26 +156,19 @@ const OnboardingWizard = () => {
       );
     }
 
-
-    const response = await fetch(
-      "http://localhost:3000/api/v1/customer/register",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
-
-
+   const response = await fetch(
+  `${API_URL}/customer/register`,
+  //   "http://localhost:3000/api/v1/customer/register",
+  {
+    method: "POST",
+    body: formData,
+  }
+);
     const result = await response.json();
-
-
     if (!response.ok) {
       throw new Error(result.error || "Erreur serveur");
     }
-
-
     console.log("BACKEND RESPONSE :", result);
-
 
     toast.success("Dossier soumis avec succès !");
 
@@ -191,8 +200,10 @@ const OnboardingWizard = () => {
     case 2: return <Step3Profession />;
     case 3: return <Step4Services />;
     case 4: return <Step5Banking />;
-    case 5: return <Step6Biometric />;
-    case 6: return <Step7Review />;
+    // pour le test
+    // case 5: return <Step6Biometric />;
+  
+    case 5: return <Step7Review />;
     default: return null;
   }
 };
@@ -258,7 +269,8 @@ const OnboardingWizard = () => {
                     <Button 
                       type="button" 
                       disabled={isSubmitting}
-                      onClick={methods.handleSubmit(onSubmit)}
+                      // onClick={methods.handleSubmit(onSubmit)}
+                      onClick={() => onSubmit(methods.getValues())}
                       className="gap-2 rounded-full px-8 bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all"
                     >
                       {isSubmitting ? 'Envoi...' : 'Soumettre le dossier'}

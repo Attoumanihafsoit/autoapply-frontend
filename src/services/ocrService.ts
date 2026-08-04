@@ -78,7 +78,8 @@ for (const pair of formData.entries()) {
 }
 
 console.log("========== ENVOI API OCR ==========");
-console.log("API_BASE_URL =", API_BASE_URL);
+console.log("🔥 VITE_API_URL DANS OCR =", import.meta.env.VITE_API_URL);
+console.log("🔥 API_BASE_URL DANS OCR =", API_BASE_URL);
 
 
 
