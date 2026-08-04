@@ -25,10 +25,12 @@ export const ocrService = {
   address?: string;
   postalAddress?: string;
   selfieFile?: File;
+  
+
   ouverture_compte?: boolean;
-   demande_chequier?: boolean;
-    demande_carte?: boolean;
-     activation_omba?: boolean;
+  demande_chequier?: boolean;
+  demande_carte?: boolean;
+  activation_omba?: boolean;
 }
   ): Promise<OcrResult> => {
 
@@ -63,25 +65,31 @@ if (selfieImage) {
 }
 
 // DONNES FICHIER 
+// SERVICES DEMANDÉS
+
+  
+// SERVICES DEMANDÉS
 formData.append(
-  'ouverture_compte',
+  "ouverture_compte",
   String(clientData.ouverture_compte ?? false)
 );
 
 formData.append(
-  'demande_chequier',
+  "demande_chequier",
   String(clientData.demande_chequier ?? false)
 );
 
 formData.append(
-  'demande_carte',
+  "demande_carte",
   String(clientData.demande_carte ?? false)
 );
 
 formData.append(
-  'activation_omba',
+  "activation_omba",
   String(clientData.activation_omba ?? false)
 );
+
+
 
     // DEBUG
     console.log("CLIENT DATA :", clientData);

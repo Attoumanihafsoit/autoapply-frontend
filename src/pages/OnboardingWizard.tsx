@@ -156,6 +156,31 @@ useEffect(() => {
       );
     }
 
+    
+// SERVICES DEMANDÉS
+
+formData.append(
+  "ouverture_compte",
+  String(data.step4?.openIndividualAccount === "yes")
+);
+
+formData.append(
+  "demande_chequier",
+  String(data.step4?.requestCheckbook === "yes")
+);
+
+formData.append(
+  "demande_carte",
+  String(data.step4?.requestCard === "yes")
+);
+
+formData.append(
+  "activation_omba",
+  String(data.step4?.activateOrangeMoney === "yes")
+);
+
+
+
    const response = await fetch(
   `${API_URL}/customer/register`,
   //   "http://localhost:3000/api/v1/customer/register",
